@@ -25,3 +25,15 @@ or
     An alternative to Ghostscript might be the Python 3.x library, 
 PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 
+
+
+
+############################
+### Program Requirements ###
+############################
+
+1. Strip leading "Job_" chars
+2. Collect applicable CoC and move to temp folder
+2.1 Human step here? Any kind of review?
+3. gs script should run to rotate and combine pdfs. Should output
+   (some kind of naming scheme) to a folder for renaming (manual step)
