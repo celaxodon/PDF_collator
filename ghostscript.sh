@@ -2,16 +2,20 @@
 
 # Check if Ghostscript is installed
 if [ ! -f /usr/local/bin/gs ]; then
-    echo "Ghostscript is not installed! Download here: http://pages.uoregon.edu/koch/"
-    exit 1     # exit status 0 for success, 1 for failure
+    echo "Ghostscript is not installed!" 
+    echo "You can download here: http://pages.uoregon.edu/koch/"
+    exit 1     # exit status 0 =  success, 1 = failure
 fi
 
 # input - maybe provide for a range?
 #echo "Enter the ID number followed by ENTER:"
 #read id_num
 
-files="$directory + /*"
-name="example"  # Output file name
+#files="$directory + /*"
+datestamp="$(date "+%m-%d-%y")"
+
+# Define file name for output
+name="example $datestamp" 
 
 # From stackoverflow - merging pdf files
 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=${name}.pdf ./*.pdf
