@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+
+# Check if Ghostscript is installed
+#checkdeps() {
+#
+#    if [ -e /usr/local/bin/gs ]; then
+#        echo "Ghost script is installed."; 
+#    else
+#        echo >&2 "dependency Ghostscript is needed. Please install before coninuing."
+#    # need to figure out what the right exit status is and how to code it
+#        exit 1
+#    fi
+#
+#}
+
+# Alternatively, check if a file exists with:
+if [ ! -f /usr/local/bin/gs ]; then
+    echo "Ghostscript is not installed!"
+    exit 1     # exit status 0 for success, 1 for failure
+fi
+
+# input - eventually do a range
+#echo "Enter the ID number followed by ENTER:"
+#read id_num
+
+files="$directory + /*"
+
+# From stackoverflow - merging pdf files
+gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=out.pdf ./*.pdf
+
+# piping input into ghostscript so I can use arrays instead of listing each file
+# individually:
+
+files=$(echo *.pdf)
+#gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=out.pdf -_ < file_list.txt
+
+# note that the option -dPDFSETTINGS=/prepress will only compress things above 300 dpi
+
+## Need to reduce size of final pdf.
