@@ -37,3 +37,27 @@ PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 2.1 Human step here? Any kind of review?
 3. gs script should run to rotate and combine pdfs. Should output
    (some kind of naming scheme) to a folder for renaming (manual step)
+
+
+#####################
+###     Notes     ###
+#####################
+
+.../Files_to_strip - dir that S will put files into to eventually be
+                     combined.
+
+.../To File - Final dir that K will use in renaming and filing.
+
+.../ToPDF - Where files are located when awaiting combination with gs
+            script.
+
+#####################
+###     To Do     ###
+#####################
+
+1. Make function to strip names
+2. Function to find applicable CoC
+3. Move batches (Files + CoCs) to temp dir to process with gs script
+4. Integrate gs script and process
+5. Come up with a renaming scheme
+6. Move files to "To File" dir for human step
