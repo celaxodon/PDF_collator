@@ -45,6 +45,7 @@ done
 echo "File names stripped.";
 echo \n;
 mv * $ToPDF;    # All files in original directory moved. Fix???
+# May just be able to skip this step, create a temp dir and call ghostscript.
 echo "Moved PDFs to 'ToPDF' folder.";
 #echo "PDF IDs are: ${PDF_ids[@]}";
 echo \n;
