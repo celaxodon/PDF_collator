@@ -12,6 +12,7 @@ fi
 
 files="$directory + /*"
 name="example"  # Output file name
+# Notes that 'ls -1U | wc -l' returns the number of files in a directory
 
 # From stackoverflow - merging pdf files
 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=${name}.pdf ./*.pdf
