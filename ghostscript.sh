@@ -7,9 +7,8 @@ if [ ! -f /usr/local/bin/gs ]; then
     exit 1     # exit status 0 =  success, 1 = failure
 fi
 
-# input - maybe provide for a range?
-#echo "Enter the ID number followed by ENTER:"
-#read id_num
+# Take arg1 (directory) and perform the collation
+cd $1
 
 #files="$directory + /*"
 datestamp="$(date "+%m-%d-%y")"
