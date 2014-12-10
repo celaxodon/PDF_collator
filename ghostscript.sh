@@ -6,11 +6,9 @@ if [ ! -f /usr/local/bin/gs ]; then
     exit 1     # exit status 0 for success, 1 for failure
 fi
 
-# input - maybe provide for a range?
-#echo "Enter the ID number followed by ENTER:"
-#read id_num
+# Change to directory where PDF_collator.sh is running
+cd $1
 
-files="$directory + /*"
 name="example"  # Output file name
 # Notes that 'ls -1U | wc -l' returns the number of files in a directory
 
