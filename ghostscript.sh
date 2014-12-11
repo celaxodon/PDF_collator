@@ -1,5 +1,4 @@
-#!/usr/bin/env sh
-
+#!/usr/bin/env sh 
 # Check if Ghostscript is installed
 if [ ! -f /usr/local/bin/gs ]; then
     echo "Ghostscript is not installed!" 
@@ -10,15 +9,23 @@ fi
 # Take arg1 (directory) and perform the collation
 cd $1
 
-#files="$directory + /*"
-datestamp="$(date "+%m-%d-%y")"
+tmp_size=0
+get_orig_size() {
+    for file in *; do
+        tmp_size=$(($tmp_size + $(du -h $file | sed -E 's/K.*//g')));
+    done
+}
 
-# Define file name for output
-name="example $datestamp" 
+#datestamp="$(date "+%m-%d-%y")"
 
-# From stackoverflow - merging pdf files
+# Define file name for output. Would be great to be able to pull out name from
+# field in file. Possibly with python PyPDF2.
+name="example" 
+
+# Merge pdf files, output with above name.
 gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=${name}.pdf ./*.pdf
 
+#comp_size=$(du -h )
 # Syntax for I/O redirection (doesn't work with lists of pdfs!
 #gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile=out.pdf -_ < file_list.txt
 
