@@ -18,8 +18,8 @@ echo "Running in "$(pwd)"";
 # Remove "job_", 4 digits and a blank space
 # Also put PDF_id loop in this function? Does it matter? Test w/ $ time
 name_stripper() {
-    for file in "$pwd"/*; do
-        mv "$file" "${file#job_[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\ }";
+    for file in *; do
+            mv "$file" $(pwd)/"${file#job_[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\ }";
 done
 }
 
