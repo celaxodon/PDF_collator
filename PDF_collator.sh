@@ -88,10 +88,11 @@ collect_reports() {
            then                    # if range should be attempted
                first=${chain%[[:digit:]][[:digit:]][[:digit:]]};
                first=${chain#}    # work on this
-           else   # a single id coc
+       elif  # a single id coc
                range=$(echo "$chain" | sed -E 's/[optg]{2}7coc.pdf//'); 
                mkdir "$range"_tmp;
                mv ./$range*.pdf ./"$range"_tmp/;
+       else
        fi
    done
        
