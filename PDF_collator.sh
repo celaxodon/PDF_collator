@@ -19,7 +19,7 @@ CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COCs'
 
 clear; 
 
-# Go to the appropriate directory for raw pdf files
+# Go to the directory for raw pdf files
 cd $ToStrip;
 
 # Remove "job_", 4 digits and a blank space
@@ -33,9 +33,10 @@ name_stripper() {
 name_stripper;
 
 ### PDF ID ARRAY ###
+
 # Array with PDF id nums to compare against CoC dirs
 PDF_ids=()
-# Note that usage of sed is unique to OS X. Linux options differ. 
+# Note that sed usage here may be unique to OS X. Linux options differ. 
 # Also accounting for misspellings of 'pg' with nearby chars. 
 for item in *; do
     PDF_ids+=($(echo $item | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g'));
@@ -79,14 +80,20 @@ range=()
 first=""
 last=""
 cd $ToPDF
+
 collect_reports() {
+    # Generate range to grab pdfs + chain
     for chain in *coc*; do
-       if [ ${#chain} = 20..21 ]
-           then
-           else
+       if [ ${#chain} > 15 ] # use length of file name to determine
+           then                    # if range should be attempted
+               first=${chain%[[:digit:]][[:digit:]][[:digit:]]};
+               first=${chain#}    # work on this
+           else   # a single id coc
+               range=$(echo "$chain" | sed -E 's/[optg]{2}7coc.pdf//'); 
+               mkdir "$range"_tmp;
+               mv ./$range*.pdf ./"$range"_tmp/;
        fi
-       first=$(sed ${i
-       range+=($(
+   done
        
 }
 #collect_reports()
