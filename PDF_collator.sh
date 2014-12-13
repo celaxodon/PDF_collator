@@ -6,9 +6,7 @@
 #Consider 'unset CDPATH' if you want relative directories!
 
 
-###########################
 ###      ALIASES        ###
-###########################
 
 ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToPDF/'
 export ToPDF # For -exec subshell purposes
@@ -16,9 +14,7 @@ export ToPDF # For -exec subshell purposes
 ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
 CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COCs''/'
 
-#####################
 ### NAME STRIPPER ###
-#####################
 
 clear; 
 
@@ -57,9 +53,7 @@ echo "Moved PDFs to 'ToPDF' folder.";
 #echo "PDF IDs are: ${PDF_ids[@]}";
 echo;
 
-###################
 ### COC GRABBER ###
-###################
 
 echo "Populating with CoCs...";
 echo;
@@ -73,9 +67,7 @@ find_coc() {
 
 find_coc;
 
-#######################
 ### COLLECT REPORTS ###
-#######################
 
 echo "Collecting reports...";
 echo;
@@ -112,7 +104,12 @@ collect_reports() {
    done
        
 }
+
 #collect_reports()
+
+### GHOSTSCRIPT ###
+
+
 # Eventually, call ghostscript script, using $1 as desired directory
 #exec ghostscript.sh $(pwd)
 
