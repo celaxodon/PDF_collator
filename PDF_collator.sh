@@ -3,6 +3,9 @@
 # A script to strip "job_#### " from filenames, find matching CoCs,
 # and catenate pdfs into one PDF.
 
+#Consider 'unset CDPATH' if you want relative directories!
+
+
 ###########################
 ###      ALIASES        ###
 ###########################
@@ -45,6 +48,7 @@ done
 echo "File names stripped.";
 echo;
 
+### FIX ME ###
 # Eventually need to account for non-conforming PDFs in this folder before mv.
 mv * $ToPDF;
 
@@ -81,18 +85,24 @@ first=""
 last=""
 cd $ToPDF
 
+# Standard coc filename length = 16 --> 123456pg7coc.pdf
+# Multi-ID coc filename length = 20 --> 123456pg7-450coc.pdf
+# Single rerun coc filename length = 17 --> 123456apg7coc.pdf
+# Multi-ID rerun coc filename lenght = 22 --> 123456apg7-450acoc.pdf
+
 collect_reports() {
     # Generate range to grab pdfs + chain
     for chain in *coc*; do
-       if [ ${#chain} > 15 ] # use length of file name to determine
-           then                    # if range should be attempted
-               first=${chain%[[:digit:]][[:digit:]][[:digit:]]};
-               first=${chain#}    # work on this
-       elif  # a single id coc
-               range=$(echo "$chain" | sed -E 's/[optg]{2}7coc.pdf//'); 
+       if [ ${#chain} > 18 ] # Catch range cocs
+           then                   
+               first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
+                       | sed -E 's/[a-d]?coc.pdf$//'))
+               last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//')
+               range=$(echo ${first}..${last})
+       else  # a single id coc - accounts for "a-d" files. Cut them out. 
+               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7coc.pdf$//'); 
                mkdir "$range"_tmp;
                mv ./$range*.pdf ./"$range"_tmp/;
-       else
        fi
    done
        
