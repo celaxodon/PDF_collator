@@ -96,9 +96,14 @@ collect_reports() {
        if [ ${#chain} > 18 ] # Catch range cocs
            then                   
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
-                       | sed -E 's/[a-d]?coc.pdf$//'))
-               last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//')
-               range=$(echo ${first}..${last})
+                       | sed -E 's/[a-d]?coc.pdf$//'));
+               last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
+               range=$(seq $first $last);
+               mkdir "$last"_tmp;
+               # move pdfs to appropriate folder
+               for num in $range; do
+                       mv $num*.pdf "$last"_tmp;
+               done
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
                range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7coc.pdf$//'); 
                mkdir "$range"_tmp;
