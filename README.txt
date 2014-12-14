@@ -60,8 +60,8 @@ PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 2. [DONE] Function to find applicable CoC
 2.1.[Working on]  Code to test connection to server, in alternative, connect.
 3. [DONE] Move batches (Files + CoCs) to temp dir to process with gs script
-4. Integrate gs script (depends on review process)
-5. Come up with a renaming scheme
-5.2 Try "File_1" "File_2" naming scheme, use # counts for files in dir
-6. Move files to "To File" dir for human step
+4. [DONE] Integrate gs script (depends on review process)
+5. [DONE] Come up with a renaming scheme
+5.2 [DONE] Try "File_1" "File_2" naming scheme, use # counts for files in dir
+6. [DONE] Move files to "To File" dir for human step
 7. optional output - input file sizes and output pdf file size + compression ratio!

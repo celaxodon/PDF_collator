@@ -31,7 +31,7 @@ fi
 
 ToPDF='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/ToPDF/'
 export ToPDF # For -exec subshell purposes
-#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/???' #FIX
+ToFile='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/ToFile/'
 ToStrip='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/Files_to_strip/'
 CoC_dir='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/''!Current COCs''/'
 
@@ -137,15 +137,34 @@ echo;
 
 collect_reports;
 
-echo "currently operating in $(pwd)"
 
-### GHOSTSCRIPT ###
+#***************************#
+### GHOSTSCRIPT COLLATION ###
+#***************************#
 
+tmp_size=0
+filename="Report"
 
+collate_pdfs() {
+        for dir in ./*; do
+            cd "$ToPDF"$dir;
+            ls
+            # Run ghostscript. CANNOT use line breaks (\)
+            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$filename.pdf" ./*.pdf
+            # Get file counts in target dir for renaming purposes. Want +1 extra
+            # for renaming purposes.
+            file_nums=$(ls -l $ToFile | wc -l | sed -E 's/^[ \w\t]*//')
+            if [[ "$file_nums" = 0 ]]
+                then 
+                    mv "$filename".pdf $ToFile"$filename"_1.pdf;
+                else
+                    mv "$filename".pdf $ToFile"$filename"_"$file_nums".pdf;
+            fi
+            # Return to $ToPDF folder
+            cd ..;
+        done
+}
 
-# Eventually, call ghostscript script, using $1 as desired directory
-#exec ghostscript.sh $(pwd)
-
-# find_coc() && echo "Report collated. Ready for renaming in $ToFile."
+collate_pdfs && echo "Report collated. Ready for renaming in $ToFile."
 
 exit 0
