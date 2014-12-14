@@ -1,25 +1,43 @@
 #!/usr/bin/env bash
 
-# A script to strip "job_#### " from filenames, find matching CoCs,
-# and catenate pdfs into one PDF.
+#********************######################**************#
+#                  PDF Collator Script                   #
+#                Written by Graham Leva                  #
+#              Copyright 2014 Analysys, Inc.             #
+#       A script to strip "job_#### " from filenames,    #
+#    find matching CoCs, and catenate pdfs into one PDF  #
+#**********************************#######################
 
 #Consider 'unset CDPATH' if you want relative directories!
 
+#***********************#
+### DEPENDENCY CHECKS ###
+#***********************#
 
-###      ALIASES        ###
+# Check for gs installed
+if [ ! -f /usr/local/bin/gs ]; then
+        echo "Ghostscript is not installed!"
+        echo "You can download it here: hppt://pages/uoregon.edu/koch/"
+        exit 1
+fi
 
-ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToPDF/'
+# check for correct volumes mounted
+#if [[ -d /Volumes/??? ]]
+#fi
+
+#*************#
+### ALIASES ###
+#*************#
+
+ToPDF='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/ToPDF/'
 export ToPDF # For -exec subshell purposes
 #ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/???' #FIX
-ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COCs''/'
+ToStrip='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/Files_to_strip/'
+CoC_dir='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/''!Current COCs''/'
 
+#*******************#
 ### NAME STRIPPER ###
-
-clear; 
-
-# Go to the directory for raw pdf files
-cd $ToStrip;
+#*******************#
 
 # Remove "job_", 4 digits and a blank space
 # Also put PDF_id loop in this function? Does it matter? Test w/ $ time
@@ -29,9 +47,16 @@ name_stripper() {
     done
 }
 
+clear; 
+
+# Go to the directory for raw pdf files
+cd $ToStrip;
+
 name_stripper;
 
+#******************#
 ### PDF ID ARRAY ###
+#******************#
 
 # Array with PDF id nums to compare against CoC dirs
 PDF_ids=()
@@ -48,15 +73,15 @@ echo;
 # Eventually need to account for non-conforming PDFs in this folder before mv.
 mv * $ToPDF;
 
-# May just be able to skip this step, create a temp dir and call ghostscript.
+# May be optional. Could just keep them in the same folder, create temps
+# and collate.
 echo "Moved PDFs to 'ToPDF' folder.";
-#echo "PDF IDs are: ${PDF_ids[@]}";
 echo;
 
+#*****************#
 ### COC GRABBER ###
+#*****************#
 
-echo "Populating with CoCs...";
-echo;
 
 # Change to 'mv' if we can just take the CoCs out.
 find_coc() {
@@ -65,17 +90,18 @@ find_coc() {
     done
 }
 
+echo "Populating with CoCs...";
+echo;
 find_coc;
 
+#*********************#
 ### COLLECT REPORTS ###
+#*********************#
 
-echo "Collecting reports...";
-echo;
 
 range=()
 first=""
 last=""
-cd $ToPDF
 
 # Standard coc filename length = 16 --> 123456pg7coc.pdf
 # Multi-ID coc filename length = 20 --> 123456pg7-450coc.pdf
@@ -85,7 +111,7 @@ cd $ToPDF
 collect_reports() {
     # Generate range to grab pdfs + chain
     for chain in *coc*; do
-       if [ ${#chain} > 18 ] # Catch range cocs
+       if [[ ${#chain} > 18 ]] # Catch range cocs
            then                   
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?coc.pdf$//'));
@@ -99,15 +125,22 @@ collect_reports() {
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
                range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7coc.pdf$//'); 
                mkdir "$range"_tmp;
-               mv ./$range*.pdf ./"$range"_tmp/;
+               mv "$range"*.pdf ./"$range"_tmp/;
        fi
    done
        
 }
 
-#collect_reports()
+cd $ToPDF
+echo "Collecting reports...";
+echo;
+
+collect_reports;
+
+echo "currently operating in $(pwd)"
 
 ### GHOSTSCRIPT ###
+
 
 
 # Eventually, call ghostscript script, using $1 as desired directory

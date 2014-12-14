@@ -58,8 +58,8 @@ PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 1. [DONE] Make function to strip names
 1.? Function to identify non-conforming PDFs before
 2. [DONE] Function to find applicable CoC
-2.1. Code to test connection to server, in alternative, connect.
-3. Move batches (Files + CoCs) to temp dir to process with gs script
+2.1.[Working on]  Code to test connection to server, in alternative, connect.
+3. [DONE] Move batches (Files + CoCs) to temp dir to process with gs script
 4. Integrate gs script (depends on review process)
 5. Come up with a renaming scheme
 5.2 Try "File_1" "File_2" naming scheme, use # counts for files in dir
