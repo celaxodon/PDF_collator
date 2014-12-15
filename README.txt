@@ -55,13 +55,4 @@ PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 ###     To Do     ###
 #####################
 
-1. [DONE] Make function to strip names
-1.? Function to identify non-conforming PDFs before
-2. [DONE] Function to find applicable CoC
-2.1.[Working on]  Code to test connection to server, in alternative, connect.
-3. [DONE] Move batches (Files + CoCs) to temp dir to process with gs script
-4. [DONE] Integrate gs script (depends on review process)
-5. [DONE] Come up with a renaming scheme
-5.2 [DONE] Try "File_1" "File_2" naming scheme, use # counts for files in dir
-6. [DONE] Move files to "To File" dir for human step
-7. optional output - input file sizes and output pdf file size + compression ratio!
+1. optional output - input file sizes and output pdf file size + compression ratio!
