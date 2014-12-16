@@ -13,7 +13,7 @@ clear;
 
 # Go to the directory for raw pdf files
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd );
-#echo "Begins running in "$(pwd)"";
+
 cd $DIR && echo "just cd'd to DIR var. Running in $(pwd)"
 
 # Remove "job_", 4 digits and a blank space
@@ -26,6 +26,4 @@ done
 
 name_stripper && echo "File names stripped.";
 
-sleep 10;
-
-#exit 0
+exit 0

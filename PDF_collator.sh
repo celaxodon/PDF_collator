@@ -15,25 +15,58 @@
 #***********************#
 
 # Check for gs installed
-if [ ! -f /usr/local/bin/gs ]; then
+if [[ ! -f /usr/local/bin/gs ]]; then
         echo "Ghostscript is not installed!"
         echo "You can download it here: hppt://pages/uoregon.edu/koch/"
         exit 1
 fi
 
 # check for correct volumes mounted
-#if [[ -d /Volumes/??? ]]
-#fi
+if [[ ! -d /Volumes/scans/ ]]; then
+        echo 'Error! Volume "scans" has not been mounted. Please connect to and mount before running this script again.'
+        exit 1
+fi
+
+if [[ ! -d /Volumes/Server/ ]]; then
+        echo 'Error! Volume "Server" has not been mounted. Please connect to and mount before running this script again.'
+        exit 1
+fi
 
 #*************#
 ### ALIASES ###
 #*************#
 
-ToPDF='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/ToPDF/'
+# NOTE: Need strong quotes for dirs starting with exclamation points (!).
+ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+#ToPDF='/Volumes/Server/''!!Data Review''/.ToPDF/'
 export ToPDF # For -exec subshell purposes
-ToFile='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/ToFile/'
-ToStrip='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/Files_to_strip/'
-CoC_dir='/Users/klurl/Desktop/ASI_Work/Scripts/PDF_collator/Testing/''!Current COCs''/'
+ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+#ToFile='/Volumes/Server/''!!Data Review''/8.\ Completed\ Reports\ to\ File/'
+ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+#ToStrip='/Volumes/Server/''!!Data Review''/5.\ Data\ Qual\ Review\ Complete/'
+CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COC''/'
+#CoC_dir='/Volumes/Volumes/scans/''!Current COC''/' 
+
+# Check that necessary folders are available:
+if [[ ! -d $ToPDF ]]; then
+        echo "Folder "$ToPDF" is not accessible. Needs correction in code."
+        exit 1
+fi
+
+if [[ ! -d $ToFile ]]; then
+        echo "Folder "$ToFile" is not accessible. Needs correction in code."
+        exit 1
+fi
+
+if [[ ! -d $ToStrip ]]; then
+        echo "Folder "$ToStrip" is not accessible. Needs correction in code."
+        exit 1
+fi
+
+if [[ ! -d $CoC_dir ]]; then
+        echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
+        exit 1
+fi
 
 #*******************#
 ### NAME STRIPPER ###
@@ -58,6 +91,9 @@ name_stripper;
 ### PDF ID ARRAY ###
 #******************#
 
+# Getting duplicate numbers, but not sure if it's important enough to 
+# cull duplicates.
+
 # Array with PDF id nums to compare against CoC dirs
 PDF_ids=()
 # Note that sed usage here may be unique to OS X. Linux options differ. 
@@ -69,8 +105,6 @@ done
 echo "File names stripped.";
 echo;
 
-### FIX ME ###
-# Eventually need to account for non-conforming PDFs in this folder before mv.
 mv * $ToPDF;
 
 # May be optional. Could just keep them in the same folder, create temps
@@ -86,7 +120,9 @@ echo;
 # Change to 'mv' if we can just take the CoCs out.
 find_coc() {
     for id in ${PDF_ids[@]}; do
-        find "$CoC_dir" -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"' X '{}' +
+        find "$CoC_dir"/'1. Corpus' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
+        find "$CoC_dir"/'2. Austin' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
+
     done
 }
 
@@ -142,15 +178,34 @@ collect_reports;
 ### GHOSTSCRIPT COLLATION ###
 #***************************#
 
-tmp_size=0
+#tmp_size=0
 filename="Report"
 
 collate_pdfs() {
+        # Check and remove extraneous PDFs that did not match any CoCs
+        # This runs no matter what...
+        if test -n "$(find . -maxdepth 1 -name '*.pdf' -print -quit)"
+            then
+                echo "                   WARNING!              ";
+                echo "PDF files present that did not match with CoCs!";
+                echo "Unmatched PDF files are:";
+                echo *.pdf;
+                echo;
+                echo "Returning unmatched files to original folder.";
+                mv "$ToPDF"*.pdf "$ToStrip";
+                echo;
+            else
+                echo "All PDFs in folder matched with chains."
+        fi    
+
         for dir in ./*; do
             cd "$ToPDF"$dir;
-            ls
             # Run ghostscript. CANNOT use line breaks (\)
-            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$filename.pdf" ./*.pdf
+            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$filename.pdf" ./*.pdf 2>/dev/null;
+#            if [[ $? != 0 ]]
+#                then
+#                    echo "Ghostscript failed to collate PDFs. Cleanup needed."
+#                    exit 1
             # Get file counts in target dir for renaming purposes. Want +1 extra
             # for renaming purposes.
             file_nums=$(ls -l $ToFile | wc -l | sed -E 's/^[ \w\t]*//')
@@ -165,6 +220,23 @@ collate_pdfs() {
         done
 }
 
-collate_pdfs && echo "Report collated. Ready for renaming in $ToFile."
+collate_pdfs;
+echo;
+
+# Remove tmp dirs in hidden folder
+clean_up() {  
+    cd $ToPDF;
+    echo "Cleaning up temporary files...";
+    echo;
+    echo "Moving collated PDFs and used CoCs to the trash.";
+    find "$ToPDF" -name *.pdf -exec sh -c 'mv "$@" ~/.Trash' X '{}' +
+    rmdir ./*;
+    echo;
+}            
+
+clean_up && echo "Reports collated!";
+echo "Ready for renaming in $ToFile."
+echo;
+echo;
 
 exit 0
