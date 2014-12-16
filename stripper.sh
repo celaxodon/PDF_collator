@@ -20,7 +20,8 @@ cd $DIR && echo "just cd'd to DIR var. Running in $(pwd)"
 # Also put PDF_id loop in this function? Does it matter? Test w/ $ time
 name_stripper() {
     for file in *; do
-            mv "$file" "${file#job_[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\ }";
+            newname=$(echo "$file" | sed -E 's/^'job_'[[:digit:]]*.//')
+            mv "$file" "$newname"
 done
 }
 
