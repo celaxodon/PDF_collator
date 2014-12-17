@@ -37,33 +37,33 @@ fi
 #*************#
 
 # NOTE: Need strong quotes for dirs starting with exclamation points (!).
-ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
-#ToPDF='/Volumes/Server/''!!Data Review''/.ToPDF/'
+#ToPDF=''
+ToPDF=''
 export ToPDF # For -exec subshell purposes
-ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
-#ToFile='/Volumes/Server/''!!Data Review''/8.\ Completed\ Reports\ to\ File/'
-ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-#ToStrip='/Volumes/Server/''!!Data Review''/5.\ Data\ Qual\ Review\ Complete/'
-CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COC''/'
-#CoC_dir='/Volumes/Volumes/scans/''!Current COC''/' 
+#ToFile=''
+ToFile=''
+#ToStrip=''
+ToStrip=''
+#CoC_dir=''
+CoC_dir=''
 
 # Check that necessary folders are available:
-if [[ ! -d $ToPDF ]]; then
+if [[ ! -d "$ToPDF" ]]; then
         echo "Folder "$ToPDF" is not accessible. Needs correction in code."
         exit 1
 fi
 
-if [[ ! -d $ToFile ]]; then
+if [[ ! -d "$ToFile" ]]; then
         echo "Folder "$ToFile" is not accessible. Needs correction in code."
         exit 1
 fi
 
-if [[ ! -d $ToStrip ]]; then
+if [[ ! -d "$ToStrip" ]]; then
         echo "Folder "$ToStrip" is not accessible. Needs correction in code."
         exit 1
 fi
 
-if [[ ! -d $CoC_dir ]]; then
+if [[ ! -d "$CoC_dir" ]]; then
         echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
         exit 1
 fi
@@ -76,14 +76,22 @@ fi
 # Also put PDF_id loop in this function? Does it matter? Test w/ $ time
 name_stripper() {
     for file in *; do
-        mv "$file" $(pwd)/"${file#job_[[:digit:]][[:digit:]][[:digit:]][[:digit:]]\ }";
+        newname=$(echo "$file" | sed -E 's/^'job_'[[:digit:]]*.//')
+        mv "$file" "$newname"
     done
 }
 
 clear; 
 
 # Go to the directory for raw pdf files
-cd $ToStrip;
+cd "$ToStrip";
+
+# Test if there are files to grab
+if [[ $(ls | wc -l | sed -E 's/^ *//g') = 0 ]]
+    then 
+        echo "No files found for collation. Exiting program."
+        exit 1
+fi
 
 name_stripper;
 
@@ -105,7 +113,7 @@ done
 echo "File names stripped.";
 echo;
 
-mv * $ToPDF;
+mv * "$ToPDF";
 
 # May be optional. Could just keep them in the same folder, create temps
 # and collate.
@@ -146,20 +154,30 @@ last=""
 
 collect_reports() {
     # Generate range to grab pdfs + chain
-    for chain in *coc*; do
+    for chain in *c?c*; do
        if [[ ${#chain} > 18 ]] # Catch range cocs
            then                   
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
-                       | sed -E 's/[a-d]?coc.pdf$//'));
+                       | sed -E 's/[a-d]?c.c.pdf$//'));
                last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
                range=$(seq $first $last);
                mkdir "$last"_tmp;
                # move pdfs to appropriate folder
                for num in $range; do
-                       mv $num*.pdf "$last"_tmp;
+                       # Make sure all range pdfs exist
+                       if test -n "$(shopt -s nullglob; echo "$num"*.pdf)"
+                           then 
+                               mv "$num"*.pdf "$last"_tmp;
+                           else
+                               echo "                          WARNING!   ";
+                               echo;
+                               echo "CoC $(echo "$last"*c?c*.pdf) indicates ranges of files which do not exist in "$ToStrip"";
+                               echo "$Please return CoC to where it came from.";
+                               echo;
+                       fi
                done
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
-               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7coc.pdf$//'); 
+               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c.pdf$//'); 
                mkdir "$range"_tmp;
                mv "$range"*.pdf ./"$range"_tmp/;
        fi
@@ -167,7 +185,7 @@ collect_reports() {
        
 }
 
-cd $ToPDF
+cd "$ToPDF"
 echo "Collecting reports...";
 echo;
 
@@ -186,7 +204,7 @@ collate_pdfs() {
         # This runs no matter what...
         if test -n "$(find . -maxdepth 1 -name '*.pdf' -print -quit)"
             then
-                echo "                   WARNING!              ";
+                echo "                       WARNING!              ";
                 echo "PDF files present that did not match with CoCs!";
                 echo "Unmatched PDF files are:";
                 echo *.pdf;
@@ -208,12 +226,12 @@ collate_pdfs() {
 #                    exit 1
             # Get file counts in target dir for renaming purposes. Want +1 extra
             # for renaming purposes.
-            file_nums=$(ls -l $ToFile | wc -l | sed -E 's/^[ \w\t]*//')
+            file_nums=$(ls -l "$ToFile" | wc -l | sed -E 's/^[ \w\t]*//')
             if [[ "$file_nums" = 0 ]]
                 then 
-                    mv "$filename".pdf $ToFile"$filename"_1.pdf;
+                    mv "$filename".pdf "$ToFile""$filename"_1.pdf;
                 else
-                    mv "$filename".pdf $ToFile"$filename"_"$file_nums".pdf;
+                    mv "$filename".pdf "$ToFile""$filename"_"$file_nums".pdf;
             fi
             # Return to $ToPDF folder
             cd ..;
@@ -225,7 +243,7 @@ echo;
 
 # Remove tmp dirs in hidden folder
 clean_up() {  
-    cd $ToPDF;
+    cd "$ToPDF";
     echo "Cleaning up temporary files...";
     echo;
     echo "Moving collated PDFs and used CoCs to the trash.";
@@ -235,8 +253,6 @@ clean_up() {
 }            
 
 clean_up && echo "Reports collated!";
-echo "Ready for renaming in $ToFile."
-echo;
 echo;
 
 exit 0
