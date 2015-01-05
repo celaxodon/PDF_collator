@@ -120,10 +120,10 @@ mv * "$ToPDF";
 echo "Moved PDFs to 'ToPDF' folder.";
 echo;
 
+
 #*****************#
 ### COC GRABBER ###
 #*****************#
-
 
 # Change to 'mv' if we can just take the CoCs out.
 find_coc() {
@@ -138,10 +138,10 @@ echo "Populating with CoCs...";
 echo;
 find_coc;
 
+
 #*********************#
 ### COLLECT REPORTS ###
 #*********************#
-
 
 range=()
 first=""
@@ -152,7 +152,6 @@ last=""
 # Single rerun coc filename length = 17 --> 123456apg7coc.pdf
 # Multi-ID rerun coc filename lenght = 22 --> 123456apg7-450acoc.pdf
 # QC/WP/SP samples have NO RANGES.
-# Note that you could use =~ for matching extended regexes
 
 collect_reports() {
     # Generate range to grab pdfs + chain
