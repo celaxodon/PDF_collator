@@ -73,8 +73,7 @@ fi
 ### NAME STRIPPER ###
 #*******************#
 
-# Remove "job_", 4 digits and a blank space
-# Also put PDF_id loop in this function? Does it matter? Test w/ $ time
+# Remove "job_", some number of digits and a blank space
 name_stripper() {
     for file in *; do
         newname=$(echo "$file" | sed -E 's/^'job_'[[:digit:]]*.//')
