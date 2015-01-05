@@ -94,29 +94,35 @@ if [[ $(ls | wc -l | sed -E 's/^ *//g') = 0 ]]
 fi
 
 name_stripper;
+echo "File names stripped.";
+echo;
+
+#******************#
+### QC Collation ###
+#******************#
+
+# Need to separate out QC files for different handling before others are moved.
+
+
 
 #******************#
 ### PDF ID ARRAY ###
 #******************#
 
-# Getting duplicate numbers, but not sure if it's important enough to 
-# cull duplicates.
-
 # Array with PDF id nums to compare against CoC dirs
 PDF_ids=()
+
 # Note that sed usage here may be unique to OS X. Linux options differ. 
 # Also accounting for misspellings of 'pg' with nearby chars. 
 for item in *; do
-    PDF_ids+=($(echo $item | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g'));
+    echo "$item" | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g' >> temp;
 done                                          
 
-echo "File names stripped.";
-echo;
-
+PDF_ids=($(cat temp | sort | uniq));
+rm temp;
 mv * "$ToPDF";
 
-# May be optional. Could just keep them in the same folder, create temps
-# and collate.
+# Move all PDFs to 'ToPDF' folder
 echo "Moved PDFs to 'ToPDF' folder.";
 echo;
 
