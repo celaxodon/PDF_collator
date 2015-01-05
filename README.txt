@@ -3,8 +3,10 @@ entitled "Report_collator".
 
 ### PDF collating program notes ####
 
-    Ghostscript was chosen as an alternative to the current Apple script. The issue it has (somewhat) successfully addressed is file size and 
-rotation of PDFs, where the Apple script fails on both.
+    Ghostscript was chosen as an alternative to the previous solution, which
+used an Apple script. The issue it has (somewhat) successfully 
+addressed is file size and rotation of PDFs, where the Apple script fails on 
+both.
     The previous choice was using Apple's automator software, and used
 a python script located in '/System/Library/Automator/Combine\ PDF\ Pages.action/Contents/Resources/join.py'. This was a poor design choice, 
 as the script caused collated PDFs to balloon in size (26.5MB instead
@@ -37,6 +39,7 @@ PyPDF2, though it hasn't been thoroughly analyzed for suitability yet.
 2.1 Human step here? Any kind of review?
 3. gs script should run to rotate and combine pdfs. Should output
    (some kind of naming scheme) to a folder for renaming (manual step)
+4. Should be able to handle QC/WP/SP reports as well.
 
 
 #####################

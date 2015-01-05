@@ -37,15 +37,15 @@ fi
 #*************#
 
 # NOTE: Need strong quotes for dirs starting with exclamation points (!).
-#ToPDF=''
-ToPDF=''
+#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+ToPDF='/Volumes/Server/!!Data Review/.ToPDF/'
 export ToPDF # For -exec subshell purposes
-#ToFile=''
-ToFile=''
-#ToStrip=''
-ToStrip=''
-#CoC_dir=''
-CoC_dir=''
+#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+ToFile='/Volumes/Server/!!Data Review/8. Completed Reports to File/'
+#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+ToStrip='/Volumes/Server/!!Data Review/5. Data Qual Review Complete/'
+#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/''!Current COC''/'
+CoC_dir='/Volumes/scans/!Current COC/' 
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
@@ -67,6 +67,7 @@ if [[ ! -d "$CoC_dir" ]]; then
         echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
         exit 1
 fi
+
 
 #*******************#
 ### NAME STRIPPER ###
@@ -177,7 +178,7 @@ collect_reports() {
                        fi
                done
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
-               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c.pdf$//'); 
+               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c\.pdf$//'); 
                mkdir "$range"_tmp;
                mv "$range"*.pdf ./"$range"_tmp/;
        fi
