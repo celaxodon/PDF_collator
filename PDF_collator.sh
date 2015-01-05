@@ -97,13 +97,6 @@ name_stripper;
 echo "File names stripped.";
 echo;
 
-#******************#
-### QC Collation ###
-#******************#
-
-# Need to separate out QC files for different handling before others are moved.
-
-
 
 #******************#
 ### PDF ID ARRAY ###
@@ -118,7 +111,8 @@ for item in *; do
     echo "$item" | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g' >> temp;
 done                                          
 
-PDF_ids=($(cat temp | sort | uniq));
+# Create unique  list of PDF IDs from temp file
+PDF_ids=($(sort -u < temp));
 rm temp;
 mv * "$ToPDF";
 
@@ -157,38 +151,43 @@ last=""
 # Multi-ID coc filename length = 20 --> 123456pg7-450coc.pdf
 # Single rerun coc filename length = 17 --> 123456apg7coc.pdf
 # Multi-ID rerun coc filename lenght = 22 --> 123456apg7-450acoc.pdf
+# QC/WP/SP samples have NO RANGES.
+# Note that you could use =~ for matching extended regexes
 
 collect_reports() {
     # Generate range to grab pdfs + chain
     for chain in *c?c*; do
-       if [[ ${#chain} > 18 ]] # Catch range cocs
-           then                   
+       # Catch range cocs
+       if [[ ${#chain} > 19 ]]; then
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
-                       | sed -E 's/[a-d]?c.c.pdf$//'));
+                       | sed -E 's/[a-d]?c.c\.pdf$//'));
                last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
                range=$(seq $first $last);
                mkdir "$last"_tmp;
                # move pdfs to appropriate folder
                for num in $range; do
                        # Make sure all range pdfs exist
-                       if test -n "$(shopt -s nullglob; echo "$num"*.pdf)"
-                           then 
-                               mv "$num"*.pdf "$last"_tmp;
-                           else
-                               echo "                          WARNING!   ";
-                               echo;
-                               echo "CoC $(echo "$last"*c?c*.pdf) indicates ranges of files which do not exist in "$ToStrip"";
-                               echo "$Please return CoC to where it came from.";
-                               echo;
+                       if test -n "$(shopt -s nullglob; echo "$num"*.pdf)"; then 
+                           mv "$num"*.pdf "$last"_tmp;
+                       else
+                           echo "                          WARNING!   ";
+                           echo;
+                           echo "CoC $(echo "$last"*c?c*.pdf) indicates ranges of files which do not exist in "$ToStrip"";
+                           echo "Please return CoC to where it came from.";
+                           echo;
                        fi
                done
+       # Handle QC/WP/SP files
+       elif [[ ${chain:0:2} =~ ('QC'|'SP'|'WP') ]]; then 
+           qc=$(echo $chain | sed -E 's/[pgot]{2}7c.c\.pdf$//');
+           mkdir "$qc"_tmp;
+           mv "$qc"*.pdf ./"$qc"_tmp/;
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
-               range=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c\.pdf$//'); 
-               mkdir "$range"_tmp;
-               mv "$range"*.pdf ./"$range"_tmp/;
+           val=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c\.pdf$//'); 
+           mkdir "$val"_tmp;
+           mv "$val"*.pdf ./"$val"_tmp/;
        fi
    done
-       
 }
 
 cd "$ToPDF"
@@ -196,7 +195,7 @@ echo "Collecting reports...";
 echo;
 
 collect_reports;
-
+echo;
 
 #***************************#
 ### GHOSTSCRIPT COLLATION ###
@@ -208,7 +207,7 @@ filename="Report"
 collate_pdfs() {
         # Check and remove extraneous PDFs that did not match any CoCs
         # This runs no matter what...
-        if test -n "$(find . -maxdepth 1 -name '*.pdf' -print -quit)"
+        if test -n "$(find . -maxdepth 1 -name "*.pdf" -print -quit)"
             then
                 echo "                       WARNING!              ";
                 echo "PDF files present that did not match with CoCs!";
@@ -244,12 +243,14 @@ collate_pdfs() {
         done
 }
 
-collate_pdfs;
+echo "Collating PDFs...";
 echo;
+collate_pdfs;
 
 # Remove tmp dirs in hidden folder
 clean_up() {  
     cd "$ToPDF";
+    echo;
     echo "Cleaning up temporary files...";
     echo;
     echo "Moving collated PDFs and used CoCs to the trash.";
