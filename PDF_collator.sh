@@ -17,7 +17,7 @@
 # Check for gs installed
 if [[ ! -f /usr/local/bin/gs ]]; then
         echo "Ghostscript is not installed!"
-        echo "You can download it here: hppt://pages/uoregon.edu/koch/"
+        echo "You can download it here: http://pages/uoregon.edu/koch/"
         exit 1
 fi
 
@@ -27,8 +27,8 @@ if [[ ! -d /Volumes/scans/ ]]; then
         exit 1
 fi
 
-if [[ ! -d /Volumes/Server/ ]]; then
-        echo 'Error! Volume "Server" has not been mounted. Please connect to and mount before running this script again.'
+if [[ ! -d /Volumes/Data/ ]]; then
+        echo 'Error! Volume "Data" has not been mounted. Please connect to and mount before running this script again.'
         exit 1
 fi
 
@@ -37,15 +37,16 @@ fi
 #*************#
 
 # NOTE: Need strong quotes for dirs starting with exclamation points (!).
-#ToPDF=''
-ToPDF=''
+
+#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+ToPDF='/Volumes/Data/Data Review/.ToPDF/'
 export ToPDF # For -exec subshell purposes
-#ToFile=''
-ToFile=''
-#ToStrip=''
-ToStrip=''
-#CoC_dir=''
-CoC_dir=''
+#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
+#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
+#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+CoC_dir='/Volumes/scans!Current COC/'
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
