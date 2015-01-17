@@ -231,7 +231,7 @@ collate_pdfs() {
 #                    exit 1
             # Get file counts in target dir for renaming purposes. Want +1 extra
             # for renaming purposes.
-            file_nums=$(ls -l "$ToFile" | wc -l | sed -E 's/^[ \w\t]*//')
+            file_nums=$(ls -l "$ToFile" | wc -l | awk '{ print $1 }')
             if [[ "$file_nums" = 0 ]]
                 then 
                     mv "$filename".pdf "$ToFile""$filename"_1.pdf;
