@@ -38,15 +38,15 @@ fi
 
 # NOTE: Need strong quotes for dirs starting with exclamation points (!).
 
-#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
-ToPDF='/Volumes/Data/Data Review/.ToPDF/'
+ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+#ToPDF='/Volumes/Data/Data Review/.ToPDF/'
 export ToPDF # For -exec subshell purposes
-#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
-ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
-#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
-#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
-CoC_dir='/Volumes/scans!Current COC/'
+ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+#ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
+ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+#ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
+CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+#CoC_dir='/Volumes/scans!Current COC/'
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
@@ -125,13 +125,13 @@ echo;
 #*****************#
 ### COC GRABBER ###
 #*****************#
+# Finds CoCs that match PDF numbers (in $PDF_ids array)
 
 # Change to 'mv' if we can just take the CoCs out.
 find_coc() {
     for id in ${PDF_ids[@]}; do
         find "$CoC_dir"/'1. Corpus' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
         find "$CoC_dir"/'2. Austin' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
-
     done
 }
 
@@ -143,6 +143,7 @@ find_coc;
 #*********************#
 ### COLLECT REPORTS ###
 #*********************#
+# Collects related PDFs and CoCs, creates a temp dir with last number in range.
 
 range=()
 first=""
@@ -155,13 +156,14 @@ last=""
 # QC/WP/SP samples have NO RANGES.
 
 collect_reports() {
-    # Generate range to grab pdfs + chain
-    for chain in *c?c*; do
-       # Catch range cocs
-       if [[ ${#chain} > 19 ]]; then
+    for chain in *c?c*; do          # Loop over 'coc' files
+       if [[ ${#chain} > 19 ]]; then   # range CoCs
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?c.c\.pdf$//'));
                last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
+               if [[ $first > $last ]]; then        # catch 1000s place rollover
+                       first=$((first-1000));
+               fi
                range=$(seq $first $last);
                mkdir "$last"_tmp;
                # move pdfs to appropriate folder
@@ -192,8 +194,6 @@ collect_reports() {
 
 cd "$ToPDF"
 echo "Collecting reports...";
-echo;
-
 collect_reports;
 echo;
 
