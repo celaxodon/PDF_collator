@@ -17,7 +17,7 @@
 # Check for gs installed
 if [[ ! -f /usr/local/bin/gs ]]; then
         echo "Ghostscript is not installed!"
-        echo "You can download it here: hppt://pages/uoregon.edu/koch/"
+        echo "You can download it here: http://pages/uoregon.edu/koch/"
         exit 1
 fi
 
@@ -27,8 +27,8 @@ if [[ ! -d /Volumes/scans/ ]]; then
         exit 1
 fi
 
-if [[ ! -d /Volumes/Server/ ]]; then
-        echo 'Error! Volume "Server" has not been mounted. Please connect to and mount before running this script again.'
+if [[ ! -d /Volumes/Data/ ]]; then
+        echo 'Error! Volume "Data" has not been mounted. Please connect to and mount before running this script again.'
         exit 1
 fi
 
@@ -124,13 +124,13 @@ echo;
 #*****************#
 ### COC GRABBER ###
 #*****************#
+# Finds CoCs that match PDF numbers (in $PDF_ids array)
 
 # Change to 'mv' if we can just take the CoCs out.
 find_coc() {
     for id in ${PDF_ids[@]}; do
         find "$CoC_dir"/'1. Corpus' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
         find "$CoC_dir"/'2. Austin' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
-
     done
 }
 
@@ -142,6 +142,7 @@ find_coc;
 #*********************#
 ### COLLECT REPORTS ###
 #*********************#
+# Collects related PDFs and CoCs, creates a temp dir with last number in range.
 
 range=()
 first=""
@@ -154,13 +155,14 @@ last=""
 # QC/WP/SP samples have NO RANGES.
 
 collect_reports() {
-    # Generate range to grab pdfs + chain
-    for chain in *c?c*; do
-       # Catch range cocs
-       if [[ ${#chain} > 19 ]]; then
+    for chain in *c?c*; do          # Loop over 'coc' files
+       if [[ ${#chain} > 19 ]]; then   # range CoCs
                first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?c.c\.pdf$//'));
                last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
+               if [[ $first > $last ]]; then        # catch 1000s place rollover
+                       first=$((first-1000));
+               fi
                range=$(seq $first $last);
                mkdir "$last"_tmp;
                # move pdfs to appropriate folder
@@ -191,7 +193,10 @@ collect_reports() {
 
 cd "$ToPDF"
 echo "Collecting reports...";
+<<<<<<< HEAD
 
+=======
+>>>>>>> master
 collect_reports;
 echo;
 
@@ -229,7 +234,7 @@ collate_pdfs() {
 #                    exit 1
             # Get file counts in target dir for renaming purposes. Want +1 extra
             # for renaming purposes.
-            file_nums=$(ls -l "$ToFile" | wc -l | sed -E 's/^[ \w\t]*//')
+            file_nums=$(ls -l "$ToFile" | wc -l | awk '{ print $1 }')
             if [[ "$file_nums" = 0 ]]
                 then 
                     mv "$filename".pdf "$ToFile""$filename"_1.pdf;
