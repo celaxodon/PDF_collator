@@ -46,7 +46,7 @@ ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
 #ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
 ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
 #CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
-CoC_dir='/Volumes/scans!Current COC/'
+CoC_dir='/Volumes/scans/!Current COC/'
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
