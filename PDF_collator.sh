@@ -46,7 +46,7 @@ ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
 #ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
 ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
 #CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
-CoC_dir='/Volumes/scans!Current COC/'
+CoC_dir='/Volumes/scans/!Current COC/'
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
@@ -68,6 +68,31 @@ if [[ ! -d "$CoC_dir" ]]; then
         echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
         exit 1
 fi
+
+#***********#
+### USAGE ###
+#***********#
+
+usage() {
+    clear;
+    cat <<END
+    usage: PDF_collator.sh [-c] [-help]
+
+DESCRIPTION:
+    This script pulls PDFs and their matching Chain of Custodies (CoCs) from 
+    their respective directories and collates them into a report. 
+
+    -c
+        Clean option. Will clean out the temporary directory. Returns PDF files
+        and CoCs to their source locations and removes temporary directories.
+
+    -help 
+        Display this help documentation.
+
+END
+
+exit 0
+}
 
 
 #*******************#
