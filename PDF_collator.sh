@@ -17,7 +17,7 @@
 # Check for gs installed
 if [[ ! -f /usr/local/bin/gs ]]; then
         echo "Ghostscript is not installed!"
-        echo "You can download it here: http://pages/uoregon.edu/koch/"
+        echo "You can download it here: http://pages.uoregon.edu/koch/"
         exit 1
 fi
 
