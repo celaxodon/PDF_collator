@@ -17,7 +17,7 @@
 # Check for gs installed
 if [[ ! -f /usr/local/bin/gs ]]; then
         echo "Ghostscript is not installed!"
-        echo "You can download it here: http://pages/uoregon.edu/koch/"
+        echo "You can download it here: http://pages.uoregon.edu/koch/"
         exit 1
 fi
 
@@ -36,16 +36,19 @@ fi
 ### ALIASES ###
 #*************#
 
-# NOTE: Need strong quotes for dirs starting with exclamation points (!).
+# Test directories
 #ToPDF=''
-ToPDF=''
-export ToPDF # For -exec subshell purposes
 #ToFile=''
-ToFile=''
 #ToStrip=''
-ToStrip=''
 #CoC_dir=''
+
+# Active directories
+ToPDF=''
+ToFile=''
+ToStrip=''
 CoC_dir=''
+
+export ToPDF # For -exec subshell purposes
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
@@ -68,6 +71,29 @@ if [[ ! -d "$CoC_dir" ]]; then
         exit 1
 fi
 
+#***********#
+### USAGE ###
+#***********#
+
+usage() {
+    clear;
+    cat <<END
+    usage: PDF_collator.sh [-c] [-help]
+
+DESCRIPTION:
+    This script pulls PDFs and their matching Chain of Custodies (CoCs) from 
+    their respective directories and collates them into a report. 
+
+    -c
+        Clean option. Will clean out the temporary directory. Returns PDF files
+        and CoCs to their source locations and removes temporary directories.
+
+    -help 
+        Display this help documentation.
+
+END
+
+exit 0
 
 #*******************#
 ### NAME STRIPPER ###
