@@ -37,16 +37,16 @@ fi
 #*************#
 
 # Test directories
-#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
-#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
-#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+#ToPDF=''
+#ToFile=''
+#ToStrip=''
+#CoC_dir=''
 
 # Active directories
-ToPDF='/Volumes/Data/Data Review/.ToPDF/'
-ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
-ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
-CoC_dir='/Volumes/scans/!Current COC/'
+ToPDF=''
+ToFile=''
+ToStrip=''
+CoC_dir=''
 
 export ToPDF # For -exec subshell purposes
 
@@ -94,8 +94,6 @@ DESCRIPTION:
 END
 
 exit 0
-}
-
 
 #*******************#
 ### NAME STRIPPER ###
@@ -221,6 +219,10 @@ collect_reports() {
 
 cd "$ToPDF"
 echo "Collecting reports...";
+<<<<<<< HEAD
+
+=======
+>>>>>>> master
 collect_reports;
 echo;
 
