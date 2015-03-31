@@ -71,6 +71,7 @@ if [[ ! -d "$CoC_dir" ]]; then
         exit 1
 fi
 
+
 #***********#
 ### USAGE ###
 #***********#
@@ -147,14 +148,14 @@ last=""
 # QC/WP/SP samples have NO RANGES, but take the form QCXXX-XXXcoc.pdf (16)
 
 collect_reports() {
-    for chain in *c?c*; do         
-       if [[ ${#chain} >= 17 ]]; then   # range CoCs
+    for chain in *c?c.pdf; do         
+        if [[ ${#chain} > 16 ]]; then   # range CoCs
                first=$(echo ${chain:0:6});
                last=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?c.c\.pdf$//'));
 
                # catch 1000s place rollover
-               if [[ $first > $last ]]; then      
+               if [[ "$first" > "$last" ]]; then      
                        # if 555990-001coc.pdf, then last=555001, so add 1000
                        last=$((last+1000));
                fi
@@ -209,26 +210,35 @@ collate_pdfs() {
                 echo;
                 echo "Returning unmatched files to original folder.";
                 mv "$ToPDF"*.pdf "$ToStrip";
-                echo;
             else
-                echo "All PDFs in folder matched with chains."
+                echo;
+                echo "All PDFs in folder matched with chains.";
         fi    
 
         for dir in ./*; do
+            # Move to subdirectory
             cd "$ToPDF"$dir;
+
+            # Reorder chain last
+            for chain in *c?c.pdf; do
+                    newname=$(echo "last"$chain);
+                    mv $chain ./$newname;
+            done
+
             # Run ghostscript. CANNOT use line breaks (\)
             gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$filename.pdf" ./*.pdf 2>/dev/null;
 #            if [[ $? != 0 ]]
 #                then
 #                    echo "Ghostscript failed to collate PDFs. Cleanup needed."
 #                    exit 1
+#            fi
             # Get file counts in target dir for renaming purposes. Want +1 extra
             # for renaming purposes.
             file_nums=$(ls -l "$ToFile" | wc -l | awk '{ print $1 }')
-            if [[ "$file_nums" = 0 ]]
-                then 
+
+            if [[ "$file_nums" = 0 ]]; then 
                     mv "$filename".pdf "$ToFile""$filename"_1.pdf;
-                else
+            else
                     mv "$filename".pdf "$ToFile""$filename"_"$file_nums".pdf;
             fi
             # Return to $ToPDF folder
