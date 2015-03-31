@@ -140,23 +140,28 @@ range=()
 first=""
 last=""
 
-# Standard coc filename length = 16 --> 123456pg7coc.pdf
-# Multi-ID coc filename length = 20 --> 123456pg7-450coc.pdf
-# Single rerun coc filename length = 17 --> 123456apg7coc.pdf
-# Multi-ID rerun coc filename lenght = 22 --> 123456apg7-450acoc.pdf
-# QC/WP/SP samples have NO RANGES.
+# Standard coc filename length = 13 --> 123456coc.pdf
+# Multi-ID coc filename length = 17 --> 123450-456coc.pdf
+# Single rerun coc filename length = 14 --> 123456acoc.pdf
+# Multi-ID rerun coc filename lenght = 19 --> 123450a-456acoc.pdf
+# QC/WP/SP samples have NO RANGES, but take the form QCXXX-XXXcoc.pdf (16)
 
 collect_reports() {
-    for chain in *c?c*; do          # Loop over 'coc' files
-       if [[ ${#chain} > 19 ]]; then   # range CoCs
-               first=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
+    for chain in *c?c*; do         
+       if [[ ${#chain} >= 17 ]]; then   # range CoCs
+               first=$(echo ${chain:0:6});
+               last=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?c.c\.pdf$//'));
-               last=$(echo $chain | sed -E 's/[a-d]?[optg]{2}7.*\.pdf$//');
-               if [[ $first > $last ]]; then        # catch 1000s place rollover
-                       first=$((first-1000));
+
+               # catch 1000s place rollover
+               if [[ $first > $last ]]; then      
+                       # if 555990-001coc.pdf, then last=555001, so add 1000
+                       last=$((last+1000));
                fi
+
                range=$(seq $first $last);
                mkdir "$last"_tmp;
+
                # move pdfs to appropriate folder
                for num in $range; do
                        # Make sure all range pdfs exist
@@ -170,13 +175,14 @@ collect_reports() {
                            echo;
                        fi
                done
-       # Handle QC/WP/SP files
+       # Handle QC/WP/SP files; match regex
        elif [[ ${chain:0:2} =~ ('QC'|'SP'|'WP') ]]; then 
-           qc=$(echo $chain | sed -E 's/[pgot]{2}7c.c\.pdf$//');
+           qc=$(echo $chain | sed -E 's/c.c\.pdf$//');
+           # Consider mktemp -dt "$qc" in next rewrite
            mkdir "$qc"_tmp;
            mv "$qc"*.pdf ./"$qc"_tmp/;
        else  # a single id coc - accounts for "a-d" files. Cut them out. 
-           val=$(echo "$chain" | sed -E 's/[a-d]?[optg]{2}7c.c\.pdf$//'); 
+           val=$(echo "$chain" | sed -E 's/[a-d]?c.c\.pdf$//'); 
            mkdir "$val"_tmp;
            mv "$val"*.pdf ./"$val"_tmp/;
        fi
@@ -245,12 +251,14 @@ clean_up() {
 
 
 main() {
+
     clear; 
 
     # Go to the directory for raw pdf files
     cd "$ToStrip";
 
     name_stripper;
+
     echo "File names stripped.";
     echo;
 
