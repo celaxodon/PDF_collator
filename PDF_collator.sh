@@ -3,12 +3,12 @@
 #********************######################**************#
 #                  PDF Collator Script                   #
 #                Written by Graham Leva                  #
-#              Copyright 2014 Analysys, Inc.             #
+#            Copyright (c) 2014 Analysys, Inc.           #
 #       A script to strip "job_#### " from filenames,    #
 #    find matching CoCs, and catenate pdfs into one PDF  #
 #**********************************#######################
 
-#Consider 'unset CDPATH' if you want relative directories!
+# Consider 'unset CDPATH' if you want relative directories!
 
 #***********************#
 ### DEPENDENCY CHECKS ###
@@ -37,16 +37,16 @@ fi
 #*************#
 
 # Test directories
-#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
-#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
-#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
 
 # Active directories
-ToPDF='/Volumes/Data/Data Review/.ToPDF/'
-ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
-ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
-CoC_dir='/Volumes/scans/!Current COC/'
+#ToPDF='/Volumes/Data/Data Review/.ToPDF/'
+#ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
+#ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
+#CoC_dir='/Volumes/scans/!Current COC/'
 
 export ToPDF # For -exec subshell purposes
 
@@ -103,50 +103,18 @@ exit 0
 
 # Remove "job_", some number of digits and a blank space
 name_stripper() {
+    # Test if there are files to grab
+    if [[ $(ls | wc -l | sed -E 's/^ *//g') = 0 ]]
+        then 
+            echo "No files found for collation. Exiting program."
+            exit 1
+    fi
+
     for file in *; do
         newname=$(echo "$file" | sed -E 's/^'job_'[[:digit:]]*.//')
         mv "$file" "$newname"
     done
 }
-
-clear; 
-
-# Go to the directory for raw pdf files
-cd "$ToStrip";
-
-# Test if there are files to grab
-if [[ $(ls | wc -l | sed -E 's/^ *//g') = 0 ]]
-    then 
-        echo "No files found for collation. Exiting program."
-        exit 1
-fi
-
-name_stripper;
-echo "File names stripped.";
-echo;
-
-
-#******************#
-### PDF ID ARRAY ###
-#******************#
-
-# Array with PDF id nums to compare against CoC dirs
-PDF_ids=()
-
-# Note that sed usage here may be unique to OS X. Linux options differ. 
-# Also accounting for misspellings of 'pg' with nearby chars. 
-for item in *; do
-    echo "$item" | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g' >> temp;
-done                                          
-
-# Create unique  list of PDF IDs from temp file
-PDF_ids=($(sort -u < temp));
-rm temp;
-mv * "$ToPDF";
-
-# Move all PDFs to 'ToPDF' folder
-echo "Moved PDFs to 'ToPDF' folder.";
-echo;
 
 
 #*****************#
@@ -161,10 +129,6 @@ find_coc() {
         find "$CoC_dir"/'2. Austin' -name "$id"*.pdf -exec sh -c 'cp "$@" "$ToPDF"; mv "$@" ~/.Trash' X '{}' +
     done
 }
-
-echo "Populating with CoCs...";
-echo;
-find_coc;
 
 
 #*********************#
@@ -219,10 +183,6 @@ collect_reports() {
    done
 }
 
-cd "$ToPDF"
-echo "Collecting reports...";
-collect_reports;
-echo;
 
 #***************************#
 ### GHOSTSCRIPT COLLATION ###
@@ -270,9 +230,6 @@ collate_pdfs() {
         done
 }
 
-echo "Collating PDFs...";
-echo;
-collate_pdfs;
 
 # Remove tmp dirs in hidden folder
 clean_up() {  
@@ -286,7 +243,61 @@ clean_up() {
     echo;
 }            
 
-clean_up && echo "Reports collated!";
-echo;
 
-exit 0
+main() {
+    clear; 
+
+    # Go to the directory for raw pdf files
+    cd "$ToStrip";
+
+    name_stripper;
+    echo "File names stripped.";
+    echo;
+
+    # Create PDF ID array #
+
+    # Array with PDF id nums to compare against CoC dirs
+    PDF_ids=()
+
+    # Consider mktemp here
+
+    # Note that sed usage here may be unique to OS X. Linux options differ. 
+    # Also accounting for misspellings of 'pg' with nearby chars. 
+    for item in *; do
+        echo "$item" | sed -E 's/[otpg]{2}[0-9]+\.pdf$//g' >> temp;
+    done                                          
+
+    # Create unique  list of PDF IDs from temp file
+    PDF_ids=($(sort -u < temp));
+    rm temp;
+    mv * "$ToPDF";
+
+    # Move all PDFs to 'ToPDF' folder
+    echo "Moved PDFs to 'ToPDF' folder.";
+    echo;
+
+    echo "Populating with CoCs...";
+    echo;
+
+    find_coc;
+
+    cd "$ToPDF"
+    echo "Collecting reports...";
+
+    collect_reports;
+
+    echo;
+
+    echo "Collating PDFs...";
+    echo;
+
+    collate_pdfs;
+
+    clean_up && echo "Reports collated!";
+    echo;
+
+    exit 0
+
+}
+
+main;
