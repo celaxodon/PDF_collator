@@ -196,7 +196,7 @@ collect_reports() {
 #***************************#
 
 #tmp_size=0
-filename="Report"
+FILENAME=""
 
 collate_pdfs() {
         # Check and remove extraneous PDFs that did not match any CoCs
@@ -219,28 +219,25 @@ collate_pdfs() {
             # Move to subdirectory
             cd "$ToPDF"$dir;
 
-            # Reorder chain last
+            # Get report name from COC in the directory
+            FILENAME=$(echo *coc.pdf | sed -E 's/coc//');
+
+            # Reorder files so CoC is last
             for chain in *c?c.pdf; do
                     newname=$(echo "last"$chain);
                     mv $chain ./$newname;
             done
 
             # Run ghostscript. CANNOT use line breaks (\)
-            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$filename.pdf" ./*.pdf 2>/dev/null;
+            gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$FILENAME" ./*.pdf 2>/dev/null;
 #            if [[ $? != 0 ]]
 #                then
 #                    echo "Ghostscript failed to collate PDFs. Cleanup needed."
 #                    exit 1
 #            fi
-            # Get file counts in target dir for renaming purposes. Want +1 extra
-            # for renaming purposes.
-            file_nums=$(ls -l "$ToFile" | wc -l | awk '{ print $1 }')
 
-            if [[ "$file_nums" = 0 ]]; then 
-                    mv "$filename".pdf "$ToFile""$filename"_1.pdf;
-            else
-                    mv "$filename".pdf "$ToFile""$filename"_"$file_nums".pdf;
-            fi
+            mv -i "$FILENAME" "$ToFile""$FILENAME";
+
             # Return to $ToPDF folder
             cd ..;
         done
