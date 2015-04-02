@@ -195,7 +195,6 @@ collect_reports() {
 ### GHOSTSCRIPT COLLATION ###
 #***************************#
 
-#tmp_size=0
 FILENAME=""
 
 collate_pdfs() {
@@ -230,8 +229,7 @@ collate_pdfs() {
 
             # Run ghostscript. CANNOT use line breaks (\)
             gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$FILENAME" ./*.pdf 2>/dev/null;
-#            if [[ $? != 0 ]]
-#                then
+#            if [[ $? != 0 ]]; then
 #                    echo "Ghostscript failed to collate PDFs. Cleanup needed."
 #                    exit 1
 #            fi
