@@ -219,10 +219,6 @@ collect_reports() {
 
 cd "$ToPDF"
 echo "Collecting reports...";
-<<<<<<< HEAD
-
-=======
->>>>>>> master
 collect_reports;
 echo;
 
