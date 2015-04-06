@@ -48,6 +48,8 @@ ToFile=''
 ToStrip=''
 CoC_dir=''
 
+export ToPDF # For -exec subshell purposes
+
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
         echo "Folder "$ToPDF" is not accessible. Needs correction in code."
