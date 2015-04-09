@@ -95,6 +95,7 @@ DESCRIPTION:
 END
 
 exit 0
+}
 
 #*******************#
 ### NAME STRIPPER ###
@@ -222,7 +223,7 @@ collate_pdfs() {
             # Reorder files so CoC is last
             for chain in *c?c.pdf; do
                     newname=$(echo "last"$chain);
-                    mv $chain ./$newname;
+                    mv "$chain" ./"$newname";
             done
 
             # Run ghostscript. CANNOT use line breaks (\)
