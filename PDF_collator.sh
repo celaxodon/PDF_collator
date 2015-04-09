@@ -95,6 +95,7 @@ DESCRIPTION:
 END
 
 exit 0
+}
 
 #*******************#
 ### NAME STRIPPER ###
@@ -220,9 +221,9 @@ collate_pdfs() {
             FILENAME=$(echo *coc.pdf | sed -E 's/coc//');
 
             # Reorder files so CoC is last
-            for chain in *c?c.pdf; do
-                    newname=$(echo "last"$chain);
-                    mv $chain ./$newname;
+            for chain in *coc.pdf; do
+                    newname=$(echo "last""$chain");
+                    mv "$chain" ./"$newname";
             done
 
             # Run ghostscript. CANNOT use line breaks (\)
