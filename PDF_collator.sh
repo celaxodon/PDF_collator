@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-#********************######################**************#
+#********************************************************#
 #                  PDF Collator Script                   #
 #                Written by Graham Leva                  #
 #            Copyright (c) 2014 Analysys, Inc.           #
 #       A script to strip "job_#### " from filenames,    #
 #    find matching CoCs, and catenate pdfs into one PDF  #
-#**********************************#######################
+#********************************************************#
 
 # Consider 'unset CDPATH' if you want relative directories!
 
