@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+#!/usr/bin/env bash 
 #********************************************************#
 #                  PDF Collator Script                   #
 #                Written by Graham Leva                  #
@@ -33,19 +32,19 @@ fi
 
 if [[ ! -d /Volumes/scans/ ]]; then
         printf 'Error! Volume "scans" has not been mounted. Please connect to ';
-        printf 'and mount before running this script again.'\n;
+        printf 'and mount before running this script again.\n';
         exit 1
 fi
 
 if [[ ! -d /Volumes/Data/ ]]; then
         printf 'Error! Volume "Data" has not been mounted. Please connect to ';
-        printf 'and mount before running this script again.'\n;
+        printf 'and mount before running this script again.\n';
         exit 1
 fi
 
 if [[ ! -d /Volumes/Admin/ ]]; then
         printf 'Error! Volume "Admin" has not been mounted. Please connect to';
-        printf ' and mount before running this script again.'\n;
+        printf ' and mount before running this script again.\n';
         exit 1
 fi
 
@@ -58,12 +57,14 @@ ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
 ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
 ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
 CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+Billings='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Billings/'
 
 # Active directories
 #ToPDF='/Volumes/Data/Data Review/.ToPDF/'
 #ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
 #ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
 #CoC_dir='/Volumes/scans/!Current COC/'
+#Billings='Volumes/Admin/Billings/'
 
 export ToPDF # For -exec subshell purposes
 
@@ -93,15 +94,16 @@ fi
 #***********#
 
 usage() {
+    # Invoke with -h
     clear;
     cat <<END
-    usage: PDF_collator.sh [-r] [-help]
+    usage: ./PDF_collator.sh [OPTIONS]
 
 DESCRIPTION:
     This script pulls PDFs and their matching Chain of Custodies (CoCs) from 
     their respective directories and collates them into a report. 
 
-    -help 
+    -h, --help 
         Display this help documentation.
 
     -r, --reset
@@ -255,6 +257,9 @@ collate_pdfs() {
 #                    exit 1
 #            fi
 
+            # Copy to billings folder
+            cp -i "$FILENAME" "$Billings""$FILENAME";
+
             mv -i "$FILENAME" "$ToFile""$FILENAME";
 
             # Return to $ToPDF folder
@@ -271,7 +276,19 @@ reset() {
 
     # Find all Corpus COCs, return them to Corpus folder
 
-    # Find all Austin COCs, return them to austin folder
+    for file in *; do
+        # Find all Corpus COCs, return them to Corpus folder
+        if [[ "$file" =~ 4[0-9]{5}.*coc\.pdf ]]; then
+            mv -i "$file" "$CoC_dir"1.\ Corpus/;
+
+        # Find all Austin COCs, return them to austin folder
+        elif [[ "$file" =~ 5[0-9]{5}.*coc\.pdf ]]; then
+            mv -i "$file" "$CoC_dir"2.\ Austin/;
+        else
+            # Return normal files to regular places.
+            mv -i "$file" "$ToFile"
+        fi
+
 
     echo "All COCs returned to correct folders.";
     echo;
@@ -295,7 +312,7 @@ clean_up() {
     echo;
     echo "Moving collated PDFs and used CoCs to the trash.";
     find "$ToPDF" -name *.pdf -exec sh -c 'mv "$@" ~/.Trash' X '{}' +
-    rmdir ./*;
+    rmdir "$ToPDF"*;
     echo;
 }            
 
@@ -357,4 +374,13 @@ main() {
 
 }
 
-main;
+
+if [[ $1 =~ ('-h'|'--help') ]]; then
+    usage;     # Print usage/help info
+
+elif [[ $1 =~ ('-r'|'--reset') ]]; then
+    reset;     # Reset files to starting positions
+else
+    main;      # Execute main function
+fi
+
