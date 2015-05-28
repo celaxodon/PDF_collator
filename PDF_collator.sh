@@ -22,13 +22,30 @@ if [[ ! -f /usr/local/bin/gs ]]; then
 fi
 
 # check for correct volumes mounted
+# NOTE: It's possible to mount the volumes with mount_afp (OS X 10.5 filesharing
+# system), but doing so either involves having user names + passwords in this
+# script, which would introduce security issues, or having users enter their
+# passwords every time this is run. And this is run a lot. Checking for
+# mounted volumes seems the easiest solution.
+
+# Mount with mount_afp:
+# mount_afp -i "afp://<uname>:<passwd>@<IP/Hostname>/<dir/loc>" <FS/node>
+
 if [[ ! -d /Volumes/scans/ ]]; then
-        echo 'Error! Volume "scans" has not been mounted. Please connect to and mount before running this script again.'
+        printf 'Error! Volume "scans" has not been mounted. Please connect to ';
+        printf 'and mount before running this script again.'\n;
         exit 1
 fi
 
 if [[ ! -d /Volumes/Data/ ]]; then
-        echo 'Error! Volume "Data" has not been mounted. Please connect to and mount before running this script again.'
+        printf 'Error! Volume "Data" has not been mounted. Please connect to ';
+        printf 'and mount before running this script again.'\n;
+        exit 1
+fi
+
+if [[ ! -d /Volumes/Admin/ ]]; then
+        printf 'Error! Volume "Admin" has not been mounted. Please connect to';
+        printf ' and mount before running this script again.'\n;
         exit 1
 fi
 
@@ -37,16 +54,16 @@ fi
 #*************#
 
 # Test directories
-#ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
-#ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
-#ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
-#CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
+ToPDF='/Users/imac11/Programming/Scripts/PDF_collator/Testing/.ToPDF/'
+ToFile='/Users/imac11/Programming/Scripts/PDF_collator/Testing/ToFile/'
+ToStrip='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Files_to_strip/'
+CoC_dir='/Users/imac11/Programming/Scripts/PDF_collator/Testing/!Current COC/'
 
 # Active directories
-ToPDF='/Volumes/Data/Data Review/.ToPDF/'
-ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
-ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
-CoC_dir='/Volumes/scans/!Current COC/'
+#ToPDF='/Volumes/Data/Data Review/.ToPDF/'
+#ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
+#ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
+#CoC_dir='/Volumes/scans/!Current COC/'
 
 export ToPDF # For -exec subshell purposes
 
@@ -71,7 +88,6 @@ if [[ ! -d "$CoC_dir" ]]; then
         exit 1
 fi
 
-
 #***********#
 ### USAGE ###
 #***********#
@@ -79,18 +95,17 @@ fi
 usage() {
     clear;
     cat <<END
-    usage: PDF_collator.sh [-c] [-help]
+    usage: PDF_collator.sh [-r] [-help]
 
 DESCRIPTION:
     This script pulls PDFs and their matching Chain of Custodies (CoCs) from 
     their respective directories and collates them into a report. 
 
-    -c
-        Clean option. Will clean out the temporary directory. Returns PDF files
-        and CoCs to their source locations and removes temporary directories.
-
     -help 
         Display this help documentation.
+
+    -r, --reset
+        Reset CoCs from temporary directory and return PDFs to ToStrip folder.
 
 END
 
@@ -153,7 +168,14 @@ collect_reports() {
                last=$(echo ${chain:0:3}$(echo $chain | sed -E 's/.*-//' \
                        | sed -E 's/[a-d]?c.c\.pdf$//'));
 
+               if [[ "${#last}" > 6 ]]; then
+                   printf "ERROR! The file "$chain" is mislabeled. It should only be 3 digits.\n";
+                   printf "Please fix before running this program again.\n";
+                   exit 1
+               fi
+
                # catch 1000s place rollover
+               # NOTE: This fails if labeled as xxxxxx-xxxxxxcoc.pdf
                if [[ "$first" > "$last" ]]; then      
                        # if 555990-001coc.pdf, then last=555001, so add 1000
                        last=$((last+1000));
@@ -168,7 +190,7 @@ collect_reports() {
                        if test -n "$(shopt -s nullglob; echo "$num"*.pdf)"; then 
                            mv "$num"*.pdf "$last"_tmp;
                        else
-                           echo "                          WARNING!   ";
+                           printf "\t\t WARNING! \t\t\n";
                            echo;
                            echo "CoC $(echo "$last"*c?c*.pdf) indicates ranges of files which do not exist in "$ToStrip"";
                            echo "Please return CoC to where it came from.";
@@ -201,7 +223,7 @@ collate_pdfs() {
         # This runs no matter what...
         if test -n "$(find . -maxdepth 1 -name "*.pdf" -print -quit)"
             then
-                echo "                       WARNING!              ";
+                printf "\t\t WARNING! \t\t\n";
                 echo "PDF files present that did not match with CoCs!";
                 echo "Unmatched PDF files are:";
                 echo *.pdf;
@@ -240,6 +262,30 @@ collate_pdfs() {
         done
 }
 
+reset() {
+# Function returns COCs and PDFs to the correct places in the file system. 
+# Should run with the -r, --reset flags.
+    cd "$ToPDF"; 
+    echo "Resetting files to their original locations.";
+    echo;
+
+    # Find all Corpus COCs, return them to Corpus folder
+
+    # Find all Austin COCs, return them to austin folder
+
+    echo "All COCs returned to correct folders.";
+    echo;
+
+    # Find all remaining files, move back to folder 5
+    find "$ToPDF" -name *.pdf -exec sh -c 'mv "$@" ~/.Trash' X '{}' +
+
+    echo "All PDFs returned to "$ToStrip"";
+
+    # Check that each directory is empty, delete it. 
+    cd "$ToStrip";
+
+}
+
 
 # Remove tmp dirs in hidden folder
 clean_up() {  
@@ -258,7 +304,6 @@ main() {
 
     clear; 
 
-    # Go to the directory for raw pdf files
     cd "$ToStrip";
 
     name_stripper;
