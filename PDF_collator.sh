@@ -65,29 +65,37 @@ Billings='/Users/imac11/Programming/Scripts/PDF_collator/Testing/Billings/'
 #ToFile='/Volumes/Data/Data Review/8. Completed Reports to File/'
 #ToStrip='/Volumes/Data/Data Review/5. Data Qual Review Complete/'
 #CoC_dir='/Volumes/scans/!Current COC/'
-#Billings='Volumes/Admin/Billings/'
+#Billings='/Volumes/Admin/Billings/'
 
-export ToPDF # For -exec subshell purposes
+# For -exec subshell purposes
+export ToPDF 
+export ToFile
+export CoC_dir
 
 # Check that necessary folders are available:
 if [[ ! -d "$ToPDF" ]]; then
-        echo "Folder "$ToPDF" is not accessible. Needs correction in code."
-        exit 1
+    echo "Folder "$ToPDF" is not accessible. Needs correction in code."
+    exit 1
 fi
 
 if [[ ! -d "$ToFile" ]]; then
-        echo "Folder "$ToFile" is not accessible. Needs correction in code."
-        exit 1
+    echo "Folder "$ToFile" is not accessible. Needs correction in code."
+    exit 1
 fi
 
 if [[ ! -d "$ToStrip" ]]; then
-        echo "Folder "$ToStrip" is not accessible. Needs correction in code."
-        exit 1
+    echo "Folder "$ToStrip" is not accessible. Needs correction in code."
+    exit 1
 fi
 
 if [[ ! -d "$CoC_dir" ]]; then
-        echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
-        exit 1
+    echo "Folder "$CoC_dir" is not accessible. Needs correction in code."
+    exit 1
+fi
+
+if [[ ! -d "$Billings" ]]; then
+    echo "Folder "$Billings" is not accessible. Needs correction . code."
+    exit 1
 fi
 
 #***********#
@@ -98,7 +106,7 @@ usage() {
     # Invoke with -h
     clear;
     cat <<END
-    usage: ./PDF_collator.sh [OPTIONS]
+    Usage: ./PDF_collator.sh [OPTIONS]
 
 DESCRIPTION:
     This script pulls PDFs and their matching Chain of Custodies (CoCs) from 
@@ -272,38 +280,39 @@ reset() {
 # Function returns COCs and PDFs to the correct places in the file system. 
 # Should run with the -r, --reset flags.
     cd "$ToPDF"; 
-    echo "Resetting files to their original locations.";
+    clear;
+    echo "Resetting files to their original locations...";
     echo;
 
-    # Find all Corpus COCs, return them to Corpus folder
+    # Note, must export variables to use in subshell processes.
 
-    for file in *; do
-        # Find all Corpus COCs, return them to Corpus folder
-        if [[ "$file" =~ 4[0-9]{5}.*coc\.pdf ]]; then
-            mv -i "$file" "$CoC_dir"1.\ Corpus/;
+    # Find all Corpus COCs, return them to Corpus folder.
+    find -E . -regex '.*/4.+coc\.pdf' -exec sh -c 'mv -i "$@" "$CoC_dir"1.\ Corpus/' X '{}' +
 
-        # Find all Austin COCs, return them to austin folder
-        elif [[ "$file" =~ 5[0-9]{5}.*coc\.pdf ]]; then
-            mv -i "$file" "$CoC_dir"2.\ Austin/;
-        else
-            # Return normal files to regular places.
-            mv -i "$file" "$ToFile"
-        fi
-
-
+    # Find all Austin CoCs, return them to Austin Folder
+    find -E . -regex '.*/5.+coc\.pdf' -exec sh -c 'mv -i "$@" "$CoC_dir"2.\ Austin/' X '{}' +
+    
     echo "All COCs returned to correct folders.";
     echo;
 
-    # Find all remaining files, move back to folder 5
-    find "$ToPDF" -name *.pdf -exec sh -c 'mv "$@" ~/.Trash' X '{}' +
+    # Find normal files and return them.
+    find . -name '*pg?.pdf' -exec sh -c 'mv -i "$@" "$ToStrip"' X '{}' +
 
-    echo "All PDFs returned to "$ToStrip"";
+    echo "All PDFs returned to "$ToStrip".";
+    echo;
 
     # Check that each directory is empty, delete it. 
-    cd "$ToStrip";
-
+    cd "$ToPDF";
+    for i in *; do
+        if [[ -d "$i" ]]; then
+            rmdir "$i";
+        else
+            printf "Error! Regular file not cleaned.\n";
+            printf "Please remove manually.\n";
+            exit 1
+        fi
+    done
 }
-
 
 # Remove tmp dirs in hidden folder
 clean_up() {  
