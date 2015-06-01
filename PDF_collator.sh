@@ -252,13 +252,8 @@ collate_pdfs() {
             FILENAME=$(echo *coc.pdf | sed -E 's/coc//');
 
             # Reorder files so CoC is last
-<<<<<<< HEAD
             for chain in *coc.pdf; do
                     newname=$(echo "last""$chain");
-=======
-            for chain in *c?c.pdf; do
-                    newname=$(echo "last"$chain);
->>>>>>> dev
                     mv "$chain" ./"$newname";
             done
 
