@@ -93,3 +93,17 @@ OPTIONS:
 
   -r, --reset Resets pdfs and their associated Chain of Custody (CoC) files to
               the appropriate places in the file system. 
+
+
+Possible PDF packages:
+----------------------
+
+* PDF 1.0
+* PDFTron-PDFNet_SDK-for-Python 5.7
+* pdfminer3k
+* pdfrecycle
+* pdfsplit
+* pdftools.pdfjoin
+* pdfcat
+* py-pdf-collate
+* PyPDF2
