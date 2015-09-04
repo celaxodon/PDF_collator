@@ -95,6 +95,14 @@ OPTIONS:
               the appropriate places in the file system. 
 
 
+
+Python Rewrite
+--------------
+
+Considerations:
+  * What's the best way to compress?
+  * Get file operations down to functions, then worry about compression
+    
 Possible PDF packages:
 ----------------------
 
