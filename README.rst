@@ -115,3 +115,5 @@ Possible PDF packages:
 * pdfcat
 * py-pdf-collate
 * PyPDF2
+* Ghostscript -- the python package in pypi is Linux and Python 2.x compatible only.
+                 Could port, but look at other functionality first.
