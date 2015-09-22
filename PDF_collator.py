@@ -16,13 +16,13 @@ import colorama
 #***********#
 
 # Location for finished, collated reports
-FIN_REPORTS = '/Volumes/Data/Data Review/8. Completed Reports to File/'
+FIN_REPORTS = ''
 # Location for reports that have been reviewed, but not collated
-REVD_REPORTS = '/Volumes/Data/Data Review/5. Data Qual Review Complete/'
+REVD_REPORTS = ''
 # Location of CoCs
-COC_DIR = '/Volumes/scans/!Current COC/'
+COC_DIR = ''
 # Folder to copy reports into after collation
-BILLINGS = '/Volumes/Admin/Billings/'
+BILLINGS = ''
 
 
 def system_checks():
