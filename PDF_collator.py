@@ -130,7 +130,6 @@ def strip_chars(directory):
     file_list = os.listdir(directory)
     for i in file_list:
         if regex.match(i):
-            i = 
             # remember to join paths, if you're not working from that directory
             os.rename(old, new)
 
@@ -159,13 +158,13 @@ def main():
 
     # Make system checks
     if system_checks() == False:
-        return "System checks failed. Program exiting."
+        print("System checks failed. Program exiting.")
+        sys.exit(1)
     elif file_check() == False:
-        return "Program exiting."
-        exit()
+        print("No files found to collate. Program exiting.")
+        sys.exit(0)
 
-    print("Stripping file names...\n")
-
+    print("Analyzing file names...")
     strip_chars(REVD_REPORTS)
 
 
