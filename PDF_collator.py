@@ -7,7 +7,13 @@
 # Something about the proper license    #
 #---------------------------------------#
 
-import sys, os, os.path, logging, argparse, re
+import sys
+import os
+import os.path
+import logging
+import re
+import argparse
+
 # For color output
 #import colorama
 
@@ -26,9 +32,9 @@ BILLINGS = '/Volumes/Admin/Billings/'
 
 
 def system_checks():
-    """Function for checking required software is installed
-       and that remote file system directories are mounted."""
-
+    """Check required software is installed and that remote file system
+    directories are mounted.
+    """
     # Check operating system
     if os.uname().sysname != 'Darwin':
         print("Warning! This program was only designed to run on Mac OS X")
@@ -81,7 +87,6 @@ def system_checks():
 
 def file_check(directory):
     """Test for files existing in target directory."""
-
     if len(os.listdir(directory)) == 0:
         print("No files exist in the reviewed reports folder for collation.\n")
         return False
@@ -92,8 +97,7 @@ def file_check(directory):
 
 
 def parser_setup():
-    """Parser for command line invocation and arguments."""
-
+    """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Rename scanned reports, find'
             ' Chain of Custodies (CoCs) and collate PDF reports.')
     # -h, --help is setup by default
@@ -111,9 +115,11 @@ def parser_setup():
 
 def clean():
     """Clean the working directory and reset files back to their starting
-       positions. """
+       positions.
+    """
     # Note, if properly handling exceptions and errors, and also maybe using
-    # temporary file systems, this method could become obsolete.
+    # temporary file systems, this method could become obsolete. That would be
+    # a good thing!
     pass
 
 #***************#
@@ -122,16 +128,22 @@ def clean():
 
 def strip_chars(directory):
     """Strip leading characters from file names in a specified directory. 
-       Pattern is of the form 'job_####', where '#' can be any number of 
-       numbers, but usually less than five."""
 
+   Pattern is of the form 'job_####', where '#' can be any number of 
+   numbers, but usually less than five.
+    """
     # Check syntax for backslashes - compile to \\w and \\d
     regex = re.compile('^job_[\d]*[\w]{1}')
     file_list = os.listdir(directory)
+    # Consider using if foo.startswith('job_#### ') or foo.endswith(xxxx) to
+    # check for string prefixes or suffixes. Cleaner and less error prone.
     for i in file_list:
-        if regex.match(i):
+        if i.startswith('job'):
             # remember to join paths, if you're not working from that directory
+
             os.rename(old, new)
+        else:
+            continue
 
 
 #***************#
@@ -140,7 +152,8 @@ def strip_chars(directory):
 
 def collect_cocs(directory, file_list):
     """Collects Chain of Custody files given a target directory and list of
-       files to match against CoCs."""
+       files to match against CoCs.
+    """
 
 #******************#
 # Report Collector #
