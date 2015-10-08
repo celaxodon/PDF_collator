@@ -26,7 +26,8 @@ FIN_REPORTS = ''
 # Location for reports that have been reviewed, but not collated
 REVD_REPORTS = ''
 # Location of CoCs
-COC_DIR = ''
+AUS_COCS = ''
+CORP_COCS = ''
 # Folder to copy reports into after collation
 BILLINGS = ''
 
@@ -35,54 +36,69 @@ def system_checks():
     """Check required software is installed and that remote file system
     directories are mounted.
     """
+    dir_list = ['Data', 'scans', 'Admin']
+
     # Check operating system
     if os.uname().sysname != 'Darwin':
         print("Warning! This program was only designed to run on Mac OS X")
         ans = input("Run at your own risk. Continue? (y/n)\n")
         while True:
-            low_ans = str(ans).lower()
-            if low_ans == 'y' or low_ans == 'yes':
+            lower_ans = str(ans).lower()
+            if lower_ans == 'y' or lower_ans == 'yes':
                 # Continue with checks
                 break
-            elif low_ans == 'n' or low_ans == 'no':
+            elif lower_ans == 'n' or lower_ans == 'no':
                 return False
             else:
                 print("Yes ('y') or no ('n'), please.")
                 ans = input("Continue program? (y/n)\n")
 
     # Check correct volumes from file server mounted
-    elif os.path.exists('/Volumes/Data/') == False:
-        print("This program cannot run unless you have the 'Data' folder "
-              "mounted.")
-        print("Please connect to the file server (\'New Server\') and run this"
-              " program again.\n")
-        return False
+    for d in dir_list:
+        if os.path.exists(d): # Directory is mounted
+            continue
+        else:
+            print("This program cannot run unless you have the '{0}' folder "
+                  "mounted.".format(d)
+            print("Please connect to the file server ('New Server') and run this"
+                  " program again.\n")
+            return False
 
-    elif os.path.exists('/Volumes/scans/') == False:
-        print("This program cannot run unless you have the 'scans' folder "
-              "mounted.")
-        print("Please connect to the file server (\'New Server\') and run this"
-              " program again.\n")
-        return False
-
-    elif os.path.exists('/Volumes/Admin/') == False:
-        print("This program cannot run unless you have the 'Admin' folder "
-              "mounted.")
-        print("Please connect to the file server (\'New Server\') and run this" 
-               "  program again.\n")
-        return False
-    else:
-        return True
-
-    # Test that specific directories exist
-    for folder in [FIN_REPORTS, REVD_REPORTS, COC_DIR, BILLINGS]:
-        if os.path.exists(folder) == False:
+    # Test specific directories exist
+    for folder in [FIN_REPORTS, REVD_REPORTS, AUS_COCS, CORP_COCS, BILLINGS]:
+        if os.path.exists(folder):
+            continue
+        else:
             print("The folder {0} is not accessible. Please make sure you can"
                   " navigate to the folder before running this"
                   " program again.\n".format(folder))
             return False
-        else:
-            continue
+
+
+def name_check(*args):
+    """Test for incorrect Chain of Custody labels before running each time."""
+
+    bad_names = []
+    # Fix me!
+    coc_regex = '[\d]{6}[a-d]?(-[\d]{3}[a-d]?)?coc\.pdf'|'(QC|WP|SP)[\d]{3}-[\d]{3}coc\.pdf'
+
+    for path in args:
+        cocs = os.listdir(path)
+        if '.DS_Store' in cocs:     # Remove OS X-specific directory services store file
+            cocs.remove('.DS_Store')   
+        for i in cocs:
+            # Check against regex for non-conforming file names 
+            if re.match(coc_regex, i):
+                continue
+            else:
+                # Throw a warning
+                bad_names.append(i)
+
+    if len(bad_names) == 0:
+        return None
+    else:
+        return bad_names
+                
 
 
 def file_check(directory):
@@ -176,6 +192,9 @@ def main():
     elif file_check() == False:
         print("No files found to collate. Program exiting.")
         sys.exit(0)
+
+    print("Checking CoC names...")
+    name_check(AUS_COCS, CORP_COCS)
 
     print("Analyzing file names...")
     strip_chars(REVD_REPORTS)
