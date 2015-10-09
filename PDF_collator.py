@@ -59,7 +59,7 @@ def system_checks():
             continue
         else:
             print("This program cannot run unless you have the '{0}' folder "
-                  "mounted.".format(d)
+                  "mounted.".format(d))
             print("Please connect to the file server ('New Server') and run this"
                   " program again.\n")
             return False
@@ -75,12 +75,25 @@ def system_checks():
             return False
 
 
+def file_check(directory):
+    """Test for files existing in target directory."""
+    if len(os.listdir(directory)) == 0:
+        return False
+    elif len(os.listdir(directory)) == 1 and '.DS_Store' in os.listdir(directory):
+        return False
+    else:
+        return True    # Files exist and they're not irrelevant
+
+    # Consider checking for .afp_[\d]+ files in collation directory
+    # and for .DS_Store files.
+
+
 def name_check(*args):
     """Test for incorrect Chain of Custody labels before running each time."""
 
     bad_names = []
     # Fix me!
-    coc_regex = '[\d]{6}[a-d]?(-[\d]{3}[a-d]?)?coc\.pdf'|'(QC|WP|SP)[\d]{3}-[\d]{3}coc\.pdf'
+    coc_regex = '([\d]{6}[a-d]?(-[\d]{3}[a-d]?)?coc\.pdf|(QC|WP|SP)[\d]{3}-[\d]{3}coc\.pdf)'
 
     for path in args:
         cocs = os.listdir(path)
@@ -99,18 +112,6 @@ def name_check(*args):
     else:
         return bad_names
                 
-
-
-def file_check(directory):
-    """Test for files existing in target directory."""
-    if len(os.listdir(directory)) == 0:
-        print("No files exist in the reviewed reports folder for collation.\n")
-        return False
-    else:
-        return True    # Files exist
-
-    # Consider checking for .afp_[\d]+ files in collation directory
-
 
 def parser_setup():
     """Parse command line arguments."""
@@ -190,7 +191,8 @@ def main():
         print("System checks failed. Program exiting.")
         sys.exit(1)
     elif file_check() == False:
-        print("No files found to collate. Program exiting.")
+        print("No files exist in the reviewed reports folder for collation.")
+        print("Program exiting.\n")
         sys.exit(0)
 
     print("Checking CoC names...")
