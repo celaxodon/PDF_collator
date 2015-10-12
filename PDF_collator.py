@@ -89,20 +89,30 @@ def file_check(directory):
 
 
 def name_check(*args):
-    """Test for incorrect Chain of Custody labels before running each time."""
+    """Test for incorrect Chain of Custody labels before running each time.
+    
+    Returns a list of bad file names, or None, if name check passes.
+    """
 
     bad_names = []
     # Fix me!
+    # Need to account for repeat files - 400-400coc.pdf
+    # Need to account for two reports needing the same file. Different function - find_cocs
+    # Need to account for report ranges decrementing instead of incrementing.
+    # Need to account for rerun coc naming errors (e.g. 123456a-460coc.pdf, 1234556-460acoc.pdf)
     coc_regex = '([\d]{6}[a-d]?(-[\d]{3}[a-d]?)?coc\.pdf|(QC|WP|SP)[\d]{3}-[\d]{3}coc\.pdf)'
 
     for path in args:
-        cocs = os.listdir(path)
+        coc_list = os.listdir(path)
         if '.DS_Store' in cocs:     # Remove OS X-specific directory services store file
-            cocs.remove('.DS_Store')   
+            coc_list.remove('.DS_Store')   
         for i in cocs:
             # Check against regex for non-conforming file names 
             if re.match(coc_regex, i):
                 continue
+            # Check that first range number doesn't match the second
+            elif '-' in i:
+                if 
             else:
                 # Throw a warning
                 bad_names.append(i)
@@ -146,8 +156,8 @@ def clean():
 def strip_chars(directory):
     """Strip leading characters from file names in a specified directory. 
 
-   Pattern is of the form 'job_####', where '#' can be any number of 
-   numbers, but usually less than five.
+    Pattern is of the form 'job_####', where '#' can be any number of 
+    numbers, but usually less than five.
     """
     # Check syntax for backslashes - compile to \\w and \\d
     regex = re.compile('^job_[\d]*[\w]{1}')
