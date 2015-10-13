@@ -104,12 +104,11 @@ def name_check(*args):
             coc_list.remove('.DS_Store')
 
         for i in coc_list:
-            # Check against regex for non-conforming file names 
             match = coc_RE.fullmatch(i)
             # Full match exists!
             if match is not None:
                 if i.startswith(("QC", "SP", "WP")):
-                    # Don't worry about numbers for these samples.
+                    # Don't worry about ranges for these samples.
                     continue
                 elif '-' in i:
                     first = int(match.group(2))
@@ -173,39 +172,51 @@ def strip_chars(directory):
     Function should return None if operations successful, or a list of
     bad file names if any are found.
     """
-    # Check syntax for backslashes - compile to \\w and \\d
-    name_RE = re.compile('^job_[\d]*[\s]{1}')
+    prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
     file_list = os.listdir(directory)
     # Consider using if foo.startswith('job_#### ') or foo.endswith(xxxx) to
     # check for string prefixes or suffixes. Cleaner and less error prone.
     for f in file_list:
         if f.startswith('job'):
-            new = re.split(name_RE, f)[1]
-            # remember to join paths, if you're not working from that directory
-
+            new = re.split(prefix_RE, f)[1]
             os.rename(os.path.join(directory, f), os.path.join(directory, new))
-        else:
-            continue
-    return
+
+    renamed_files = os.listdir(directory)
+    name_RE = re.compile('[\\d]{6}pg[1-9]{1}\\.pdf')
+    bad_file_names = []
+    for f in renamed_files:
+        if not name_RE.fullmatch(f):
+            bad_file_names.append(f)
+
+    if len(bad_file_names) == 0:
+        return None
+    else:
+        return bad_file_names
 
 
 #***************#
 # CoC Collector #
 #***************#
 
-def collect_cocs(directory, file_list):
-    """Collects Chain of Custody files given a target directory and list of
-       files to match against CoCs.
+def collect_cocs(*args, file_list):
+    """Collects Chain of Custody files given a sequence of target directories
+    and list of files to match against CoCs.
+
+    Standard coc filename len = 13 --> 123456coc.pdf
+    Multi-PDF coc filename len = 17 --> 123450-456coc.pdf
+    Single rerun coc filename len = 14 --> 123456acoc.pdf
+    Multi-PDF rerun coc filename len = 19 --> 123450a-456acoc.pdf
+    QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf. len = 16
     """
 
+    
+    for f in args:
+
+
+
 #******************#
-# Report Collector #
+# Report Collator  #
 #******************#
-# Standard coc filename len = 13 --> 123456coc.pdf
-# Multi-PDF coc filename len = 17 --> 123450-456coc.pdf
-# Single rerun coc filename len = 14 --> 123456acoc.pdf
-# Multi-PDF rerun coc filename len = 19 --> 123450a-456acoc.pdf
-# QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf. len = 16
 
 
 def main():
@@ -222,9 +233,11 @@ def main():
         sys.exit(0)
 
     print("Checking CoC names...")
+    # Need to handle returned data
     name_check(AUS_COCS, CORP_COCS)
     print()
     print("Analyzing file names...")
+    # Handle returned data
     strip_chars(REVD_REPORTS)
 
 

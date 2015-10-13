@@ -60,10 +60,10 @@ fi
 #CoC_dir=''
 
 # Active directories
-ToPDF=''
-ToFile=''
-ToStrip=''
-CoC_dir=''
+ToPDF=''    # Temp dir for collation
+ToFile=''   # Folder 8
+ToStrip=''  # Folder 5
+CoC_dir=''  # Corpus/Austin?
 
 # For -exec subshell purposes
 export ToPDF 
