@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import unittest
+import os
 import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
+
 from PDF_collator import system_checks, file_check, name_check
 
 class SystemCheckTest(unittest.TestCase):
@@ -23,15 +25,19 @@ class SystemCheckTest(unittest.TestCase):
         self.assertTrue(file_check(os.path.expanduser('~')))
 
     def tearDown(self):
-        # Clean up temp dir/file
-        # May be unnecessary with TemporaryDirectory() handling.
         try:
             os.remove(os.path.join(self.test_dir.name, '.DS_Store'))
-            os.rmdir(self.test_dir.name)
+            #os.rmdir(self.test_dir.name)
+            if os.path.exists(self.test_dir.name):
+                self.test_dir.cleanup()
+                
         except OSError:
             print("There was an error removing the temporary directory and "
                   "test .DS_Store file from the SystemCheckTest test suite.")
             print("Error was {0}".format(OSError))
+
+        except FileNotFoundError:
+            print("There was an error removing the temporary directory!")
 
 
 class NameChecks(unittest.TestCase):
@@ -48,11 +54,15 @@ class NameChecks(unittest.TestCase):
 
     def setUp(self):
         self.good_list = ['123456coc.pdf', '123456acoc.pdf', 'QC123-456coc.pdf',
-                          '123450-470coc.pdf', '123980-012coc.pdf']
+                          '123450-470coc.pdf', '123980-012coc.pdf',
+                          '123450a-470acoc.pdf', 'QC123-345coc.pdf',
+                          'SP240-012coc.pdf', 'WP242-560coc.pdf']
         self.bad_list = ['444999.pdf', '400400a.pdf', 'SP12-345coc.pdf',
                          '123400coc-123401coc.pdf', '123459-420coc.pdf',
-                         '123456cpc.pdf', '123456coc', '.DS_Store']
-        # What about repeat files? Or two reports that need the same COC?
+                         '123456cpc.pdf', '123456coc', '.DS_Store',
+                         '123500-500coc.pdf', '123456a-123460coc.pdf',
+                         '123456-123460acoc.pdf', '123400-390coc.pdf',
+                         'QP123-345coc.pdf', 'WP123-34coc.pdf']
         self.tmpdir = TemporaryDirectory()
         self.tmpdir2 = TemporaryDirectory()
 
@@ -70,25 +80,32 @@ class NameChecks(unittest.TestCase):
         self.returned_list = name_check(self.tmpdir.name)
         self.new_bad_list = self.bad_list
         self.new_bad_list.remove('.DS_Store')
-        self.assertEqual(self.new_bad_list, self.returned_list)
+        # Using sets b/c lists don't return same order.
+        s1 = set(self.new_bad_list)
+        s2 = set(self.returned_list)
+        self.assertEqual(s1, s2)
 
-        self.valid_return= name_check(self.tmpdir2.name)
+        self.valid_return = name_check(self.tmpdir2.name)
         self.assertEqual(self.valid_return, None)
 
     def tearDown(self):
         try:
             for f in os.listdir(self.tmpdir.name):
                 os.remove(os.path.join(self.tmpdir.name, f))
-            os.rmdir(self.tmpdir.name)
+            if os.path.exists(self.tmpdir.name):
+                self.tmpdir.cleanup()
             
             for i in os.listdir(self.tmpdir2.name):
                 os.remove(os.path.join(self.tmpdir2.name, i))
-            os.rmdir(self.tmpdir2.name)
+            if os.path.exists(self.tmpdir2.name):
+                self.tmpdir2.cleanup()
 
         except OSError:
             print("There was an error removing the temporary files and "
                   "directories from the NameChecks test suite.")
 
+        except FileNotFoundError:
+            print("There was an error removing the temporary directory!")
 
 if __name__ == '__main__':
     unittest.main()

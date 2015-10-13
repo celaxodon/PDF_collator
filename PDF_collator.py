@@ -76,7 +76,9 @@ def system_checks():
 
 
 def file_check(directory):
-    """Test for files existing in target directory."""
+    """Test existance of files for collation in target directory."""
+    # Consider checking for .afp_[\d]+ files in collation directory
+
     if len(os.listdir(directory)) == 0:
         return False
     elif len(os.listdir(directory)) == 1 and '.DS_Store' in os.listdir(directory):
@@ -84,37 +86,53 @@ def file_check(directory):
     else:
         return True    # Files exist and they're not irrelevant
 
-    # Consider checking for .afp_[\d]+ files in collation directory
-    # and for .DS_Store files.
-
 
 def name_check(*args):
     """Test for incorrect Chain of Custody labels before running each time.
-    
+
     Returns a list of bad file names, or None, if name check passes.
     """
 
     bad_names = []
-    # Fix me!
     # Need to account for repeat files - 400-400coc.pdf
-    # Need to account for two reports needing the same file. Different function - find_cocs
+    # What if two reports needing the same file. Different function - find_cocs
     # Need to account for report ranges decrementing instead of incrementing.
-    # Need to account for rerun coc naming errors (e.g. 123456a-460coc.pdf, 1234556-460acoc.pdf)
-    coc_regex = '([\d]{6}[a-d]?(-[\d]{3}[a-d]?)?coc\.pdf|(QC|WP|SP)[\d]{3}-[\d]{3}coc\.pdf)'
+    coc_RE = re.compile('([\\d]{3}([\\d]{3})([a-d]{1})?(-([\\d]{3})(\\3)?)?coc\\.pdf$|(QC|WP|SP)([\\d]{3})-([\\d]{3})coc\\.pdf$)')
 
     for path in args:
         coc_list = os.listdir(path)
-        if '.DS_Store' in cocs:     # Remove OS X-specific directory services store file
-            coc_list.remove('.DS_Store')   
-        for i in cocs:
+        # Less clear than below
+        #clean_list = list(filter(lambda x: x != '.DS_Store', coc_list))
+        # Remove OS X-specific directory services store file
+        if '.DS_Store' in coc_list:     
+            coc_list.remove('.DS_Store')
+
+        for i in coc_list:
             # Check against regex for non-conforming file names 
-            if re.match(coc_regex, i):
-                continue
-            # Check that first range number doesn't match the second
-            elif '-' in i:
-                if 
+            match = coc_RE.fullmatch(i)
+            # Full match exists!
+            if match is not None:
+                if i.startswith(("QC", "SP", "WP")):
+                    # Don't worry about numbers for these samples.
+                    continue
+                elif '-' in i:
+                    first = int(match.group(2))
+                    last = int(match.group(5))
+                    diff = abs(last - first)
+                    # First range number shouldn't match the second
+                    if diff == 0:
+                        bad_names.append(i)
+                    # Check that second group is incrementing
+                    # If range is 400990-010, (incrementing) diff = 980
+                    # If range is 400990-960, (decrementing) diff = 30
+                    elif last < first and diff < 100:
+                        bad_names.append(i)
+                    else:
+                        continue
+                else:
+                    # Normal CoCs - 123456coc.pdf or 123456acoc.pdf
+                    continue
             else:
-                # Throw a warning
                 bad_names.append(i)
 
     if len(bad_names) == 0:
