@@ -17,10 +17,6 @@ import argparse
 # For color output
 #import colorama
 
-#***********#
-# Variables #
-#***********#
-
 # Location for finished, collated reports
 FIN_REPORTS = ''
 # Location for reports that have been reviewed, but not collated
@@ -167,28 +163,30 @@ def clean():
     # a good thing!
     pass
 
-#***************#
-# Name Stripper #
-#***************#
 
 def strip_chars(directory):
     """Strip leading characters from file names in a specified directory. 
 
     Pattern is of the form 'job_####', where '#' can be any number of 
     numbers, but usually less than five.
+
+    Function should return None if operations successful, or a list of
+    bad file names if any are found.
     """
     # Check syntax for backslashes - compile to \\w and \\d
-    regex = re.compile('^job_[\d]*[\w]{1}')
+    name_RE = re.compile('^job_[\d]*[\s]{1}')
     file_list = os.listdir(directory)
     # Consider using if foo.startswith('job_#### ') or foo.endswith(xxxx) to
     # check for string prefixes or suffixes. Cleaner and less error prone.
-    for i in file_list:
-        if i.startswith('job'):
+    for f in file_list:
+        if f.startswith('job'):
+            new = re.split(name_RE, f)[1]
             # remember to join paths, if you're not working from that directory
 
-            os.rename(old, new)
+            os.rename(os.path.join(directory, f), os.path.join(directory, new))
         else:
             continue
+    return
 
 
 #***************#
@@ -225,13 +223,10 @@ def main():
 
     print("Checking CoC names...")
     name_check(AUS_COCS, CORP_COCS)
-
+    print()
     print("Analyzing file names...")
     strip_chars(REVD_REPORTS)
 
 
-# "Main" when running by itself. Should be the default operating mode, since
-# users are simply clicking on the script to execute
 if __name__ == '__main__':
-
     main()
