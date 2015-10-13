@@ -5,7 +5,7 @@ import os
 import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
-from PDF_collator import system_checks, file_check, name_check
+from PDF_collator import system_checks, file_check, name_check, strip_chars
 
 class SystemCheckTest(unittest.TestCase):
     """Class for testing system checks work in PDF_collator.py."""
@@ -24,10 +24,12 @@ class SystemCheckTest(unittest.TestCase):
 
         self.assertTrue(file_check(os.path.expanduser('~')))
 
+    def testMountedDirectories(self):
+        self.fail("Test for mounted directories not yet written.")
+
     def tearDown(self):
         try:
             os.remove(os.path.join(self.test_dir.name, '.DS_Store'))
-            #os.rmdir(self.test_dir.name)
             if os.path.exists(self.test_dir.name):
                 self.test_dir.cleanup()
                 
@@ -106,6 +108,47 @@ class NameChecks(unittest.TestCase):
 
         except FileNotFoundError:
             print("There was an error removing the temporary directory!")
+
+
+class NameStripper(unittest.Testcase):
+    """Class for testing strip_chars function in PDF_collator.py."""
+
+    def setUp(self):
+        self.valid_name_list = ['job_2055 408129pg1.pdf',
+                'job_2056 408129pg2.pdf', 'job_20579 408129pg3.pdf',
+                'job_205899 560044pg1.pdf', 'job_205 560044pg2.pdf',
+                'job_206 560044pg3.pdf', 'job_20 560045pg1.pdf',
+                'job_19 560045pg2.pdf', 'job_2 560045pg3.pdf',
+                'job_2 560046pg1.pdf', 'job_20651 560046pg2.pdf',
+                'job_20661 560046pg3.pdf',
+                ]
+        self.invalid_name_list = ['job_123456pg1.pdf', '    123456pd1.pdf',
+                'ybb_ 123456pg1.pdf']
+        self.final_state = ['408129pg1.pdf', '560046pg3.pdf',
+                            '408129pg2.pdf', '408129pg3.pdf',
+                            '560044pg1.pdf', '560044pg2.pdf',
+                            '560044pg3.pdf', '560045pg1.pdf',
+                            '560045pg2.pdf', '560045pg3.pdf',
+                            '560046pg1.pdf', '560046pg2.pdf',
+                            ]
+        self.tmpdir = TemporaryDirectory()
+
+    def testCharacterStripper(self):
+        self.fail("The character stripper test hasn't yet been written.")
+
+    def tearDown(self):
+        try:
+            for f in os.listdir(self.tmpdir.name):
+                os.remove(os.path.join(self.tmpdir.name, f))
+            if os.path.exists(self.tmpdir.name):
+                self.tmpdir.cleanup()
+            
+        except OSError:
+            print("There was an error removing the temporary files and "
+                  "directories from the NameStripper test suite.")
+        except FileNotFoundError:
+            print("There was an error removing the temporary directory!")
+
 
 if __name__ == '__main__':
     unittest.main()
