@@ -173,30 +173,30 @@ def strip_chars(directory):
     bad file names if any are found.
     """
     prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
+    name_RE = re.compile('[\\d]{6}pg[1-9]{1}\\.pdf')
+
+    bad_file_names = []
+
     file_list = os.listdir(directory)
-    # Consider using if foo.startswith('job_#### ') or foo.endswith(xxxx) to
-    # check for string prefixes or suffixes. Cleaner and less error prone.
     for f in file_list:
         if f.startswith('job'):
-            new = re.split(prefix_RE, f)[1]
-            os.rename(os.path.join(directory, f), os.path.join(directory, new))
+            try:
+                new = re.split(prefix_RE, f)[1]
+                os.rename(os.path.join(directory, f), os.path.join(directory, new))
+            except IndexError:     # job_####<name> <- no space
+                bad_file_names.append(f)
 
+    # Check bad names - unlikely, but better make sure!
     renamed_files = os.listdir(directory)
-    name_RE = re.compile('[\\d]{6}pg[1-9]{1}\\.pdf')
-    bad_file_names = []
-    for f in renamed_files:
-        if not name_RE.fullmatch(f):
-            bad_file_names.append(f)
+    for g in renamed_files:
+        if not name_RE.fullmatch(g):
+            bad_file_names.append(g)
 
     if len(bad_file_names) == 0:
         return None
     else:
         return bad_file_names
 
-
-#***************#
-# CoC Collector #
-#***************#
 
 def collect_cocs(*args, file_list):
     """Collects Chain of Custody files given a sequence of target directories
@@ -209,21 +209,37 @@ def collect_cocs(*args, file_list):
     QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf. len = 16
     """
 
+    coc_dict = {}
+    if '.DS_Store' in file_list:
+        file_list.remove('.DS_Store')
     
-    for f in args:
+    # Construct the dictionary of CoCs
+    for folder in args:
+        for k in os.listdir(folder):
+            coc_dict[k] = None
 
+    # Associate PDFs with CoCs by finding ranges and matching numbers
+    for key in coc_dict.keys():
 
+    # Remove CoCs from dict that didn't match to PDFs
+    for item in coc_dict.keys():
+        if coc_dict.get(item) == None:
+            del coc_dict[item]
+        else:
+            continue
+        
 
 #******************#
 # Report Collator  #
 #******************#
-
+# To do
 
 def main():
 
     parser_setup()
 
     # Make system checks
+    print("Performing system checks...")
     if system_checks() == False:
         print("System checks failed. Program exiting.")
         sys.exit(1)
@@ -232,13 +248,36 @@ def main():
         print("Program exiting.\n")
         sys.exit(0)
 
-    print("Checking CoC names...")
-    # Need to handle returned data
-    name_check(AUS_COCS, CORP_COCS)
+    # Check CoC file names
     print()
-    print("Analyzing file names...")
-    # Handle returned data
-    strip_chars(REVD_REPORTS)
+    print("Analyzing CoC names...")
+    bad_coc_names = name_check(AUS_COCS, CORP_COCS)
+    if bad_coc_names is not None:
+        print("The following CoCs have been improperly named. Please correct "
+              "before running this program again.")
+        for name in bad_coc_names:
+            print(name)
+        sys.exit(1)
+
+    # Get rid of job_#### prefixes and check namings
+    print()
+    print("Analyzing and fixing file names...")
+    bad_pdf_names = strip_chars(REVD_REPORTS)
+    if bad_pdf_names != None:
+        print("An error has occured when stripping file names.")
+        print("the following chain of custodies do not match the correct"
+              " naming scheme. Please correct them before running this "
+              "program again.")
+        print()
+        for name in bad_pdf_names:
+            print(name)
+        sys.exit(1)
+
+    # Collect and analyze PDFs vs. CoCs
+    print()
+    print("Searching for and matching CoCs...")
+    collect_cocs(AUS_COCS, CORP_COCS, os.listdir(REVD_REPORTS))
+
 
 
 if __name__ == '__main__':
