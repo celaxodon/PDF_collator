@@ -12,6 +12,7 @@ class SystemCheckTest(unittest.TestCase):
 
     def setUp(self):
         self.test_dir = TemporaryDirectory()
+        self.dir_list = ['Data', 'scans', 'Admin']
 
     def testFilesExist(self):
         # No files in dir initially
@@ -19,13 +20,16 @@ class SystemCheckTest(unittest.TestCase):
         # Create temporary .DS_Store file
         DS_file = open(os.path.join(self.test_dir.name, '.DS_Store'), 'w')
         DS_file.close()
+
         # No files, despite .DS_Store
         self.assertFalse(file_check(self.test_dir.name))
 
         self.assertTrue(file_check(os.path.expanduser('~')))
 
     def testMountedDirectories(self):
-        self.fail("Test for mounted directories not yet written.")
+        for d in self.dir_list:
+            if os.path.exists(os.path.join('/Volumes', d)):
+                self.assertTrue(system_checks())
 
     def tearDown(self):
         try:

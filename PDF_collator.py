@@ -36,6 +36,7 @@ def system_checks():
 
     # Check operating system
     if os.uname().sysname != 'Darwin':
+        print()
         print("Warning! This program was only designed to run on Mac OS X")
         ans = input("Run at your own risk. Continue? (y/n)\n")
         while True:
@@ -51,9 +52,10 @@ def system_checks():
 
     # Check correct volumes from file server mounted
     for d in dir_list:
-        if os.path.exists(d): # Directory is mounted
+        if os.path.exists(os.path.join('/Volumes', d)): # Directory is mounted
             continue
         else:
+            print()
             print("This program cannot run unless you have the '{0}' folder "
                   "mounted.".format(d))
             print("Please connect to the file server ('New Server') and run this"
@@ -69,6 +71,8 @@ def system_checks():
                   " navigate to the folder before running this"
                   " program again.\n".format(folder))
             return False
+
+    return True
 
 
 def file_check(directory):
@@ -208,11 +212,31 @@ def collect_cocs(*args, file_list):
     Multi-PDF rerun coc filename len = 19 --> 123450a-456acoc.pdf
     QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf. len = 16
     """
-
     coc_dict = {}
+
     if '.DS_Store' in file_list:
         file_list.remove('.DS_Store')
-    
+
+    def find_range(string):
+        """Takes a string for 'key' and returns a range of values.
+        
+        For example, 123456-460coc.pdf would return the list
+        ['123456', '123457', '123458', '123459', '123460']
+        """
+        if string.startswith(('QC', 'SP', 'WP')):
+            return string.strip('coc.pdf')
+        elif '-' in string:
+            first, second = string.split('-')[0]
+            last = first[:3] + second[:3]
+            # Account for 400990-002 --> 400990, 400002
+            if int(last) < int(first):
+                last = int(last) + 1000
+            return list(range(int(first), int(last)))
+        else: # Not a range CoC
+            return string.rstrip('coc.pdf')
+
+#    When PDFs are matched to CoCs, pop them out of the list stack so the user
+#    can know what PDFs didn't match.
     # Construct the dictionary of CoCs
     for folder in args:
         for k in os.listdir(folder):
@@ -220,13 +244,15 @@ def collect_cocs(*args, file_list):
 
     # Associate PDFs with CoCs by finding ranges and matching numbers
     for key in coc_dict.keys():
+        pass
 
     # Remove CoCs from dict that didn't match to PDFs
-    for item in coc_dict.keys():
+    for item in list(coc_dict.keys()):
         if coc_dict.get(item) == None:
             del coc_dict[item]
         else:
             continue
+        pass
         
 
 #******************#
@@ -239,11 +265,16 @@ def main():
     parser_setup()
 
     # Make system checks
-    print("Performing system checks...")
-    if system_checks() == False:
+    print("Performing system checks...", end=" ")
+    if system_checks():
+        print("Passed.")
+    else:
+        print()
         print("System checks failed. Program exiting.")
         sys.exit(1)
-    elif file_check() == False:
+
+    file_check_val = file_check()
+    if file_check() == False:
         print("No files exist in the reviewed reports folder for collation.")
         print("Program exiting.\n")
         sys.exit(0)
@@ -277,7 +308,6 @@ def main():
     print()
     print("Searching for and matching CoCs...")
     collect_cocs(AUS_COCS, CORP_COCS, os.listdir(REVD_REPORTS))
-
 
 
 if __name__ == '__main__':
