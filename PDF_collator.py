@@ -181,8 +181,7 @@ def strip_chars(directory):
 
     bad_file_names = []
 
-    file_list = os.listdir(directory)
-    for f in file_list:
+    for f in os.listdir(directory):
         if f.startswith('job'):
             try:
                 new = re.split(prefix_RE, f)[1]
@@ -190,9 +189,8 @@ def strip_chars(directory):
             except IndexError:     # job_####<name> <- no space
                 bad_file_names.append(f)
 
-    # Check bad names - unlikely, but better make sure!
-    renamed_files = os.listdir(directory)
-    for g in renamed_files:
+    # Check bad names after stripping 'job_### '- unlikely, but better make sure!
+    for g in os.listdir(directory):
         if not name_RE.fullmatch(g):
             bad_file_names.append(g)
 
