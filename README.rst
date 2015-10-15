@@ -102,6 +102,15 @@ Python Rewrite
 Considerations:
   * What's the best way to compress?
   * Get file operations down to functions, then worry about compression
+  * Think about algorithm for finding PDFs and CoCs and matching
+    A. Look to PDF numbers, find CoCs accordingly. This is close to the previous
+       implementation where we generated a range of PDF numbers, and matched
+       each one with a COC, moving the COC to its own "$last_tmp" folder. 
+       The folder had the last number the COC covered in its range. All
+       PDFs and the appropriate COC were then moved to that folder for
+       collation. 
+    B. Look to COCs, generate ranges they encompass, match with PDFs. Do it
+       with dictionaries. Delete any keys that don't have PDFs associated.
     
 Possible PDF packages:
 ----------------------
