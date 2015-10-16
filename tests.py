@@ -149,16 +149,17 @@ class NameStripper(unittest.TestCase):
                              '560046pg1.pdf', '560046pg2.pdf',
                              ]
 
+        # Good and bad (mixed) data
         self.mixed_name_list = ['job_123456pg1.pdf', '    123456pd1.pdf',
                                 'ybb_ 123456pg1.pdf', 'job_2056 408129pg2.pdf',
-                                'job_12345 408999pg21.pdf']
-        # Result of os.listdir after strip_chars on mixed_name_list dir
-        self.mixed_data_result = ['job_123456pg1.pdf', '    123456pd1.pdf',
-                                  'ybb_ 123456pg1.pdf', '408129pg2.pdf',
-                                  '408999pg21.pdf']
-        # Return value for strip_chars from mixed_name_list
+                                'job_12345 408999pg21.pdf', '123456pg1.pdf']
+
+        # Bad names from mixed_name_list
         self.mixed_bad_names = ['job_123456pg1.pdf', '    123456pd1.pdf',
                                 'ybb_ 123456pg1.pdf', '408999pg21.pdf']
+
+        # Return for good data from mixed_name_list
+        self.mixed_data_result = ['408129pg2.pdf', '123456pg1.pdf']
 
 
         # Set up temp folders for data tests
@@ -175,18 +176,13 @@ class NameStripper(unittest.TestCase):
             f.close()
 
     def testCharacterStripper(self):
-        valid_data = strip_chars(self.tmpdir.name)
-        self.assertEqual(valid_data, None)
-        s1 = set(os.listdir(self.tmpdir.name))
-        s2 = set(self.valid_result)
-        self.assertEqual(s1, s2)
+        valid_data, errors = strip_chars(self.tmpdir.name)
+        self.assertEqual(errors, None)
+        self.assertEqual(set(os.listdir(self.tmpdir.name)), set(valid_data))
 
-        bad_data = set(strip_chars(self.tmpdir2.name))
-        s3 = set(self.mixed_bad_names)
-        self.assertEqual(bad_data, s3)
-        s4 = set(os.listdir(self.tmpdir2.name))
-        s5 = set(self.mixed_data_result)
-        self.assertEqual(s4, s5)
+        valid_data2, errors2 = strip_chars(self.tmpdir2.name)
+        self.assertEqual(set(errors2), set(self.mixed_bad_names))
+        self.assertEqual(set(valid_data2), set(self.mixed_data_result))
 
     def tearDown(self):
         try:
@@ -210,12 +206,16 @@ class NameStripper(unittest.TestCase):
 class ChainCollection(unittest.TestCase):
 
     def setUp(self):
-        pass
+        # Should have clean data by this point!
+        self.cocs = ['123456coc.pdf', '123457-460coc.pdf', 'QC123-345coc.pdf',
+                     '123000acoc.pdf', '123001a-006acoc.pdf']
+        self.fail("The test for testing CoC mappings hasn't been written yet.")
+
     def testMappings(self):
         self.fail("The test for testing CoC mappings hasn't been written yet.")
-        pass
+
     def tearDown(self):
-        pass
+        self.fail("The test for testing CoC mappings hasn't been written yet.")
 
 
 if __name__ == '__main__':

@@ -173,36 +173,48 @@ def strip_chars(directory):
     Pattern is of the form 'job_####', where '#' can be any number of 
     numbers, but usually less than five.
 
-    Function should return None if operations successful, or a list of
-    bad file names if any are found.
+    Function should return a tuple consisting of a list of the directory's
+    contents (valid names only) and either None, in the event that no bad
+    file names were found, or a list of bad file names if any were found.
     """
     prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
-    name_RE = re.compile('[\\d]{6}pg[1-9]{1}\\.pdf')
+    name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$')
 
+    # New operations
+    i = 0
     bad_file_names = []
-
-    for f in os.listdir(directory):
-        if f.startswith('job'):
+    dirlist = os.listdir(directory)
+    while i < len(dirlist):
+        if dirlist[i].startswith('job'):
             try:
-                new = re.split(prefix_RE, f)[1]
-                os.rename(os.path.join(directory, f), os.path.join(directory, new))
-            except IndexError:     # job_####<name> <- no space
-                bad_file_names.append(f)
+                new = re.split(prefix_RE, dirlist[i])[1]
+                os.rename(os.path.join(directory, dirlist[i]),
+                          os.path.join(directory, new))
+                # Update the list with new name
+                dirlist[i] = new
+                # Check validity of new name
+                if not name_RE.fullmatch(dirlist[i]):
+                    bad_file_names.append(dirlist[i])
+                i += 1
+            except IndexError:
+                bad_file_names.append(dirlist[i])
+                i += 1
+        else:
+            if not name_RE.fullmatch(dirlist[i]):
+                bad_file_names.append(dirlist[i])
+            i += 1
 
-    # Check bad names after stripping 'job_### '- unlikely, but better make sure!
-    for g in os.listdir(directory):
-        if not name_RE.fullmatch(g):
-            bad_file_names.append(g)
-
+    #Get a set of only valid names in the directory
+    valid_names = list(set.difference(set(dirlist), set(bad_file_names)))
     if len(bad_file_names) == 0:
-        return None
+        return (valid_names, None)
     else:
-        return bad_file_names
+        return (valid_names, bad_file_names)
 
 
 def collect_cocs(*args, file_list):
     """Collects Chain of Custody files given a sequence of target directories
-    and list of files to match against CoCs.
+    and list of valid files to match against CoCs.
 
     Standard coc filename len = 13 --> 123456coc.pdf
     Multi-PDF coc filename len = 17 --> 123450-456coc.pdf
@@ -223,6 +235,7 @@ def collect_cocs(*args, file_list):
         """
         if string.startswith(('QC', 'SP', 'WP')):
             return string.strip('coc.pdf')
+        # ACCOUNT FOR RANGE RERUNS!!!
         elif '-' in string:
             first, second = string.split('-')[0]
             last = first[:3] + second[:3]
@@ -291,21 +304,20 @@ def main():
     # Get rid of job_#### prefixes and check namings
     print()
     print("Analyzing and fixing file names...")
-    bad_pdf_names = strip_chars(REVD_REPORTS)
+    good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
     if bad_pdf_names != None:
-        print("An error has occured when stripping file names.")
-        print("the following chain of custodies do not match the correct"
-              " naming scheme. Please correct them before running this "
-              "program again.")
-        print()
+        print("An error has occured when stripping file names!")
+        print("The following CoCs do not match the correct naming scheme "
+              "and will be ignored:")
+        print("--------------------")
         for name in bad_pdf_names:
             print(name)
-        sys.exit(1)
+        print("--------------------")
 
     # Collect and analyze PDFs vs. CoCs
     print()
     print("Searching for and matching CoCs...")
-    collect_cocs(AUS_COCS, CORP_COCS, os.listdir(REVD_REPORTS))
+    collect_cocs(AUS_COCS, CORP_COCS, good_pdf_names)
 
 
 if __name__ == '__main__':
