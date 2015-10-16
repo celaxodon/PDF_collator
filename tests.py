@@ -33,7 +33,8 @@ class SystemCheckTest(unittest.TestCase):
 
     def tearDown(self):
         try:
-            os.remove(os.path.join(self.test_dir.name, '.DS_Store'))
+            for f in os.listdir(self.test_dir.name):
+                os.remove(os.path.join(self.test_dir.name, f))
             if os.path.exists(self.test_dir.name):
                 self.test_dir.cleanup()
                 
@@ -72,16 +73,27 @@ class NameChecks(unittest.TestCase):
 
         self.tmpdir = TemporaryDirectory()
         self.tmpdir2 = TemporaryDirectory()
+        # Test it works with multiple function arguments
+        self.tmpdir3 = TemporaryDirectory()
+        self.tmpdir4 = TemporaryDirectory()
 
         # Create files in temporary directory for name testing
         for f in self.good_list + self.bad_list:
             g = open(os.path.join(self.tmpdir.name, f), 'w')
             g.close()
+            
+            m = open(os.path.join(self.tmpdir3.name, f), 'w')
+            m.close()
+
 
         # Create only good file names in tmpdir2
         for i in self.good_list:
             j = open(os.path.join(self.tmpdir2.name, i), 'w')
             j.close()
+
+            n = open(os.path.join(self.tmpdir4.name, i), 'w')
+            n.close()
+
 
     def testFileNames(self):
         self.returned_list = name_check(self.tmpdir.name)
@@ -95,18 +107,19 @@ class NameChecks(unittest.TestCase):
         self.valid_return = name_check(self.tmpdir2.name)
         self.assertEqual(self.valid_return, None)
 
-    def tearDown(self):
-        try:
-            for f in os.listdir(self.tmpdir.name):
-                os.remove(os.path.join(self.tmpdir.name, f))
-            if os.path.exists(self.tmpdir.name):
-                self.tmpdir.cleanup()
-            
-            for i in os.listdir(self.tmpdir2.name):
-                os.remove(os.path.join(self.tmpdir2.name, i))
-            if os.path.exists(self.tmpdir2.name):
-                self.tmpdir2.cleanup()
+        self.two_args_check = name_check(self.tmpdir3.name, self.tmpdir4.name)
+        self.assertEqual(s1, set(self.two_args_check))
 
+    def tearDown(self):
+        dirlist = [self.tmpdir, self.tmpdir2,
+                   self.tmpdir3, self.tmpdir4]
+        try:
+            for d in dirlist:
+                for f in os.listdir(d.name):
+                    os.remove(os.path.join(d.name, f))
+                if os.path.exists(d.name):
+                    d.cleanup()
+            
         except OSError:
             print("There was an error removing the temporary files and "
                   "directories from the NameChecks test suite.")
