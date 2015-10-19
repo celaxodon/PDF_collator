@@ -206,9 +206,18 @@ class NameStripper(unittest.TestCase):
 class ChainCollection(unittest.TestCase):
 
     def setUp(self):
+        # Testing normal, normal range, normal range lacking matching pdfs,
+        # QC chains, single rerun samples, range rerun samples.
+
         # Should have clean data by this point!
-        self.cocs = ['123456coc.pdf', '123457-460coc.pdf', 'QC123-345coc.pdf',
-                     '123000acoc.pdf', '123001a-006acoc.pdf']
+        self.cocs = ['123456coc.pdf', '123457-460coc.pdf', '123461-463coc.pdf',
+                     'QC123-345coc.pdf', '123000acoc.pdf', '123001a-004acoc.pdf']
+        # Note 123461-463coc.pdf - won't have all the matching pdfs
+        self.pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
+                     '123459pg1.pdf', '123460pg1.pdf', '123462pg1.pdf',
+                     '123463pg2.pdf', 'QC123-345pg1.pdf', '123000apg2.pdf',
+                     '123001apg2.pdf', '123002apg1.pdf', '123003apg1.pdf',
+                     '123004apg2.pdf']
         self.fail("The test for testing CoC mappings hasn't been written yet.")
 
     def testMappings(self):
