@@ -221,30 +221,21 @@ def collect_cocs(*args, file_list):
     Single rerun coc filename len = 14 --> 123456acoc.pdf
     Multi-PDF rerun coc filename len = 19 --> 123450a-456acoc.pdf
     QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf. len = 16
+
+    Returns None if all pdfs were matched with CoCs and back matching was
+    successful. Otherwise returns a list of PDFs for which no CoC could be
+    matched.
+
+    Throws an error in the event that back matching CoCs won't be entirely matched.
+    Asks the user to approve or disapprove collation without all pdfs matching
+    the CoC range.
     """
     coc_dict = {}
 
-    if '.DS_Store' in file_list:
-        file_list.remove('.DS_Store')
-
-    def find_range(string):
-        """Takes a string for 'key' and returns a range of values.
-        
-        For example, 123456-460coc.pdf would return the list
-        ['123456', '123457', '123458', '123459', '123460']
-        """
-        if string.startswith(('QC', 'SP', 'WP')):
-            return string.strip('coc.pdf')
-        # ACCOUNT FOR RANGE RERUNS!!!
-        elif '-' in string:
-            first, second = string.split('-')[0]
-            last = first[:3] + second[:3]
-            # Account for 400990-002 --> 400990, 400002
-            if int(last) < int(first):
-                last = int(last) + 1000
-            return list(range(int(first), int(last)))
-        else: # Not a range CoC
-            return string.rstrip('coc.pdf')
+    # Should be accounted for with strip_chars() function since it also
+    # checks names and returns a valid list
+    #if '.DS_Store' in file_list:
+    #    file_list.remove('.DS_Store')
 
 #    When PDFs are matched to CoCs, pop them out of the list stack so the user
 #    can know what PDFs didn't match.
@@ -253,18 +244,49 @@ def collect_cocs(*args, file_list):
         for k in os.listdir(folder):
             coc_dict[k] = None
 
-    # Associate PDFs with CoCs by finding ranges and matching numbers
-    for key in coc_dict.keys():
-        pass
+    for f in file_list:
 
-    # Remove CoCs from dict that didn't match to PDFs
-    for item in list(coc_dict.keys()):
-        if coc_dict.get(item) == None:
-            del coc_dict[item]
-        else:
-            continue
-        pass
-        
+
+def get_ranges(string):
+    """Return a list of ranges from a range coc string.
+
+    For example, '123456-460coc.pdf' would return:
+    [123456, 123457, 123458, 123459, 123460]
+
+    and '123456a-458acoc.pdf' would return:
+    [123456a, 123457a, 123458a]
+    """
+
+    # Cut 'coc.pdf'
+    r = string[:-7]
+    first, last = r.split('-')
+    last = first[:3] + last
+
+    # handle rerun versus normal range CoC
+    if first.isnumeric():
+        first = int(first)
+        last = int(last) + 1
+
+        # Check for 1000s rollover (e.g. ...995-002)
+        if last < first:
+            last += 1000
+
+        return [str(x) for x in list(range(first, last))]
+    # Rerun sample (e.g. 123456a-460a)
+    else:
+        # strip rerun characters off end
+        rerun_char = first[-1:]
+        first = int(first[:-1])
+        # Account for range() stopping at last, instead of including
+        last = int(last[:-1]) + 1
+
+        # Check for 1000s rollover (e.g. ...995-002)
+        if last < first:
+            last += 1000
+
+        return [(str(x) + rerun_char) for x in list(range(first, last))]
+
+
 
 #******************#
 # Report Collator  #

@@ -6,6 +6,7 @@ import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
 from PDF_collator import system_checks, file_check, name_check, strip_chars
+from PDF_collator import get_ranges
 
 class SystemCheckTest(unittest.TestCase):
     """Class for testing system checks work in PDF_collator.py."""
@@ -225,6 +226,25 @@ class ChainCollection(unittest.TestCase):
 
     def tearDown(self):
         self.fail("The test for testing CoC mappings hasn't been written yet.")
+
+
+class RangeReturnTests(unittest.TestCase):
+    
+    def setUp(self):
+        self.range_sample = '123456-460coc.pdf'
+        self.range_rerun1 = '123456a-460acoc.pdf'
+        self.range_rerun2 = '123997b-002bcoc.pdf'
+
+        self.range_return = ['123456', '123457', '123458', '123459', '123460']
+        self.rerun1_result = ['123456a', '123457a', '123458a', '123459a',
+                             '123460a']
+        self.rerun2_result = ['123997b', '123998b', '123999b', '124000b',
+                             '124001b', '124002b']
+
+    def test_get_ranges_fn(self):
+        self.assertEqual(get_ranges(self.range_sample), self.range_return)
+        self.assertEqual(get_ranges(self.range_rerun1), self.rerun1_result)
+        self.assertEqual(get_ranges(self.range_rerun2), self.rerun2_result)
 
 
 if __name__ == '__main__':
