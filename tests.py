@@ -219,18 +219,7 @@ class ChainCollection(unittest.TestCase):
                      '123463pg2.pdf', 'QC123-345pg1.pdf', '123000apg2.pdf',
                      '123001apg2.pdf', '123002apg1.pdf', '123003apg1.pdf',
                      '123004apg2.pdf']
-        self.fail("The test for testing CoC mappings hasn't been written yet.")
 
-    def testMappings(self):
-        self.fail("The test for testing CoC mappings hasn't been written yet.")
-
-    def tearDown(self):
-        self.fail("The test for testing CoC mappings hasn't been written yet.")
-
-
-class RangeReturnTests(unittest.TestCase):
-    
-    def setUp(self):
         self.range_sample = '123456-460coc.pdf'
         self.range_rerun1 = '123456a-460acoc.pdf'
         self.range_rerun2 = '123997b-002bcoc.pdf'
@@ -241,10 +230,17 @@ class RangeReturnTests(unittest.TestCase):
         self.rerun2_result = ['123997b', '123998b', '123999b', '124000b',
                              '124001b', '124002b']
 
+
     def test_get_ranges_fn(self):
         self.assertEqual(get_ranges(self.range_sample), self.range_return)
         self.assertEqual(get_ranges(self.range_rerun1), self.rerun1_result)
         self.assertEqual(get_ranges(self.range_rerun2), self.rerun2_result)
+
+    def testMappings(self):
+        self.fail("The test for testing CoC mappings hasn't been written yet.")
+
+    def tearDown(self):
+        self.fail("The test for testing CoC mappings hasn't been written yet.")
 
 
 if __name__ == '__main__':

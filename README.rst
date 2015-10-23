@@ -47,9 +47,10 @@ Note: Better error handling is needed.
 To do:
 ------
 
-- logging
-
+- logging (?)
 - error handling
+- CoC collection and collation
+- Compression stats
 
 Design Notes
 ------------
@@ -111,6 +112,7 @@ Considerations:
        collation. 
     B. Look to COCs, generate ranges they encompass, match with PDFs. Do it
        with dictionaries. Delete any keys that don't have PDFs associated.
+       This method could use sets for quick membership checking
     
 Possible PDF packages:
 ----------------------
