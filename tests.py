@@ -6,7 +6,8 @@ import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
 from PDF_collator import system_checks, file_check, name_check, strip_chars
-from PDF_collator import get_ranges
+from PDF_collator import get_ranges, total_file_size, collect_cocs, backcheck
+
 
 class SystemCheckTest(unittest.TestCase):
     """Class for testing system checks work in PDF_collator.py."""
@@ -185,6 +186,12 @@ class NameStripper(unittest.TestCase):
         self.assertEqual(set(errors2), set(self.mixed_bad_names))
         self.assertEqual(set(valid_data2), set(self.mixed_data_result))
 
+    def testFileSize(self):
+        # Don't really know how to test the return value of a function that gets
+        # the size of files in a directory except by checking the type of its
+        # return value...
+        self.assertTrue(type(total_file_size(self.tmpdir.name)), int)
+
     def tearDown(self):
         try:
             for f in os.listdir(self.tmpdir.name):
@@ -211,22 +218,33 @@ class ChainCollection(unittest.TestCase):
         # QC chains, single rerun samples, range rerun samples.
 
         # Should have clean data by this point!
-        self.cocs = ['123456coc.pdf', '123457-460coc.pdf', '123461-463coc.pdf',
-                     'QC123-345coc.pdf', '123000acoc.pdf', '123001a-004acoc.pdf']
-        # Note 123461-463coc.pdf - won't have all the matching pdfs
-        self.pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
-                     '123459pg1.pdf', '123460pg1.pdf', '123462pg1.pdf',
-                     '123463pg2.pdf', 'QC123-345pg1.pdf', '123000apg2.pdf',
-                     '123001apg2.pdf', '123002apg1.pdf', '123003apg1.pdf',
-                     '123004apg2.pdf']
+        # Test data for backcheck function
+        self.backcheck_cocs = ['123456coc.pdf', '123457-460coc.pdf',
+                               '123461-463coc.pdf', '123000acoc.pdf',
+                               '123001a-004acoc.pdf']
 
+        # Note 123461-463coc.pdf - won't have all the matching pdfs
+        self.incomplete_pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
+                              '123459pg1.pdf', '123460pg1.pdf', '123462pg1.pdf',
+                              '123463pg2.pdf', 'QC123-345pg1.pdf', '123000apg2.pdf',
+                              '123001apg2.pdf', '123002apg1.pdf', '123003apg1.pdf']
+
+        self.complete_pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
+                              '123459pg1.pdf', '123460pg1.pdf', '123461pg1.pdf',
+                              '123462pg1.pdf', '123463pg2.pdf', 'QC123-345pg1.pdf',
+                              '123000apg2.pdf', '123001apg2.pdf', '123002apg1.pdf',
+                              '123003apg1.pdf', '123004apg2.pdf']
+
+        # Test data for get_ranges function
         self.range_sample = '123456-460coc.pdf'
         self.range_rerun1 = '123456a-460acoc.pdf'
         self.range_rerun2 = '123997b-002bcoc.pdf'
 
         self.range_return = ['123456', '123457', '123458', '123459', '123460']
+
         self.rerun1_result = ['123456a', '123457a', '123458a', '123459a',
                              '123460a']
+
         self.rerun2_result = ['123997b', '123998b', '123999b', '124000b',
                              '124001b', '124002b']
 
@@ -236,11 +254,22 @@ class ChainCollection(unittest.TestCase):
         self.assertEqual(get_ranges(self.range_rerun1), self.rerun1_result)
         self.assertEqual(get_ranges(self.range_rerun2), self.rerun2_result)
 
-    def testMappings(self):
-        self.fail("The test for testing CoC mappings hasn't been written yet.")
+    def test_backcheck_fn(self):
+        for f in self.backcheck_cocs:
+            # All pdfs found based on CoC name - only check errors returned
+            self.assertEqual(backcheck(f, self.complete_pdfs)[1], None)
 
-    def tearDown(self):
-        self.fail("The test for testing CoC mappings hasn't been written yet.")
+        # Test for incomplete pdfs as indicated by coc range
+        required_pdfs1, errors1 = backcheck('123461-463coc.pdf', self.incomplete_pdfs)
+        self.assertEqual(set(required_pdfs1), set(['123461', '123462', '123463']))
+        self.assertEqual(errors1, ['123461'])
+
+        required_pdfs2, errors2 = backcheck('123001a-004acoc.pdf', self.incomplete_pdfs)
+        self.assertEqual(set(required_pdfs2), set(['123001a', '123002a', '123003a', '123004a']))
+        self.assertEqual(errors2, ['123004a'])
+
+    def testCocCollection(self):
+        self.fail("The test for testing CoC collection hasn't been written yet.")
 
 
 if __name__ == '__main__':
