@@ -6,7 +6,7 @@ import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
 from PDF_collator import system_checks, file_check, name_check, strip_chars
-from PDF_collator import get_ranges, total_file_size, collect_cocs, backcheck
+from PDF_collator import get_ranges, total_file_size, find_coc, backcheck
 
 
 class SystemCheckTest(unittest.TestCase):
@@ -211,7 +211,7 @@ class NameStripper(unittest.TestCase):
             print("There was an error removing the temporary directory!")
 
 
-class ChainCollection(unittest.TestCase):
+class ChainAnalysis(unittest.TestCase):
 
     def setUp(self):
         # Testing normal, normal range, normal range lacking matching pdfs,
@@ -239,6 +239,8 @@ class ChainCollection(unittest.TestCase):
         self.range_sample = '123456-460coc.pdf'
         self.range_rerun1 = '123456a-460acoc.pdf'
         self.range_rerun2 = '123997b-002bcoc.pdf'
+        self.qc_sample = 'QC123-456coc.pdf'
+        self.wp_sample = 'WP123-456coc.pdf'
 
         self.range_return = ['123456', '123457', '123458', '123459', '123460']
 
@@ -247,12 +249,16 @@ class ChainCollection(unittest.TestCase):
 
         self.rerun2_result = ['123997b', '123998b', '123999b', '124000b',
                              '124001b', '124002b']
+        self.qc_return = ['QC123-456']
+        self.wp_return = ['WP123-456']
 
 
     def test_get_ranges_fn(self):
-        self.assertEqual(get_ranges(self.range_sample), self.range_return)
-        self.assertEqual(get_ranges(self.range_rerun1), self.rerun1_result)
-        self.assertEqual(get_ranges(self.range_rerun2), self.rerun2_result)
+        self.assertEqual(get_ranges(self.range_sample), set(self.range_return))
+        self.assertEqual(get_ranges(self.range_rerun1), set(self.rerun1_result))
+        self.assertEqual(get_ranges(self.range_rerun2), set(self.rerun2_result))
+        self.assertEqual(get_ranges(self.qc_sample), set(self.qc_return))
+        self.assertEqual(get_ranges(self.wp_sample), set(self.wp_return))
 
     def test_backcheck_fn(self):
         for f in self.backcheck_cocs:
@@ -268,8 +274,28 @@ class ChainCollection(unittest.TestCase):
         self.assertEqual(set(required_pdfs2), set(['123001a', '123002a', '123003a', '123004a']))
         self.assertEqual(errors2, ['123004a'])
 
-    def testCocCollection(self):
+
+class ChainCollection(unittest.TestCase):
+
+    def setUp(self):
+        A_set = []
+        C_set = []
+        P_set = ['QC123-456coc.pdf', 'WP123-456coc.pdf', 'WP123-456acoc.pdf',
+                 'SP123-456coc.pdf']
+        self.coc_list = []
+        self.clean_pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
+                           '123459pg1.pdf', '123460pg1.pdf', '123461pg1.pdf',
+                           '123462pg1.pdf', '123463pg2.pdf', 'QC123-456pg1.pdf',
+                           'QC123-456pg2.pdf', 'WP123-456pg1.pdf', 'WP123-456pg2.pdf',
+
+                           '123000apg2.pdf', '123001apg2.pdf', '123002apg1.pdf',
+                           '123003apg1.pdf', '123004apg2.pdf']
+
+    def test_find_coc_fn(self):
         self.fail("The test for testing CoC collection hasn't been written yet.")
+
+    def test_aggregator_fn(self):
+        self.fail("The test for testing the aggregator function hasn't been written yet.")
 
 
 if __name__ == '__main__':
