@@ -233,19 +233,21 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
         if i.startswith(pattern):
             if i in A_set:
                 # Austin CoC dir
-                coc = os.path.join(A_set, i)
+                A_path = os.path.dirname(AUS_COCS)
+                coc = os.path.join(A_path, i)
                 break
             elif i in C_set:
                 # Corpus CoC dir
-                coc = os.path.join(C_set, i)
+                C_path = os.path.dirname(CORP_COCS)
+                coc = os.path.join(C_path, i)
                 break
             else:
                 # PT CoC dir
-                coc = os.path.join(P_set, i)
+                P_path = os.path.dirname(PT_COCS)
+                coc = os.path.join(P_path, i)
                 break
         else:
             coc = None
-
     return coc
                 
 
@@ -441,6 +443,7 @@ def main():
     print()
     print("Searching for and matching CoCs...")
 
+    # Sets used as input to find_coc fn for faster lookups
     A_set = set(os.listdir(AUS_COCS)) # Austin dir
     A_set.discard('.DS_Store')
     C_set = set(os.listdir(CORP_COCS)) # Corpus dir
