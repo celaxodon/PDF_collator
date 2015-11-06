@@ -5,8 +5,8 @@ import os
 import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
-from PDF_collator import system_checks, file_check, name_check, strip_chars
-from PDF_collator import get_ranges, total_file_size, find_coc, backcheck
+from PDF_collator import system_checks, file_check, name_check, strip_chars,\
+     get_ranges, total_file_size, find_coc, backcheck, aggregator
 
 
 class SystemCheckTest(unittest.TestCase):
@@ -140,16 +140,15 @@ class NameStripper(unittest.TestCase):
                 'job_206 560044pg3.pdf', 'job_20 560045pg1.pdf',
                 'job_19 560045pg2.pdf', 'job_2 560045pg3.pdf',
                 'job_2 560046pg1.pdf', 'job_20651 560046pg2.pdf',
-                'job_20661 560046pg3.pdf',
-                ]
+                'job_20661 560046pg3.pdf']
+
         # Result of os.listdir
         self.valid_result = ['408129pg1.pdf', '560046pg3.pdf',
                              '408129pg2.pdf', '408129pg3.pdf',
                              '560044pg1.pdf', '560044pg2.pdf',
                              '560044pg3.pdf', '560045pg1.pdf',
                              '560045pg2.pdf', '560045pg3.pdf',
-                             '560046pg1.pdf', '560046pg2.pdf',
-                             ]
+                             '560046pg1.pdf', '560046pg2.pdf']
 
         # Good and bad (mixed) data
         self.mixed_name_list = ['job_123456pg1.pdf', '    123456pd1.pdf',
@@ -278,25 +277,97 @@ class ChainAnalysis(unittest.TestCase):
 class ChainCollection(unittest.TestCase):
 
     def setUp(self):
-        A_set = []
-        C_set = []
-        P_set = ['QC123-456coc.pdf', 'WP123-456coc.pdf', 'WP123-456acoc.pdf',
-                 'SP123-456coc.pdf']
-        self.coc_list = []
-        self.clean_pdfs = ['123456pg1.pdf', '123457pg2.pdf', '123458pg1.pdf', 
-                           '123459pg1.pdf', '123460pg1.pdf', '123461pg1.pdf',
-                           '123462pg1.pdf', '123463pg2.pdf', 'QC123-456pg1.pdf',
-                           'QC123-456pg2.pdf', 'WP123-456pg1.pdf', 'WP123-456pg2.pdf',
+        # Extras > 555006
+        self.A_set = ['555001coc.pdf', '555002-003coc.pdf', '555004acoc.pdf',
+                      '555005a-006acoc.pdf', '555007coc.pdf', '555008coc.pdf',
+                      '555009-020coc.pdf']
+        # 444106-107 will have missing PDFs
+        self.C_set = ['444100coc.pdf', '444101-102coc.pdf', '444103acoc.pdf',
+                      '444104a-105acoc.pdf']
+        # SP is extra
+        self.P_set = ['QC123-456coc.pdf', 'WP123-456coc.pdf', 'WP123-456acoc.pdf',
+                      'SP123-456coc.pdf']
 
-                           '123000apg2.pdf', '123001apg2.pdf', '123002apg1.pdf',
-                           '123003apg1.pdf', '123004apg2.pdf']
+        self.coc_list =  self.A_set + self.C_set + self.P_set
+
+        # 444108 will have a missing CoC
+        self.clean_pdfs = ['555001pg1.pdf', '555001pg2.pdf', '555002pg1.pdf', 
+                           '555003pg1.pdf', '555004apg1.pdf', '555004apg2.pdf',
+                           '555005apg1.pdf', '555006apg1.pdf', '555006apg2.pdf',
+                           '444100pg1.pdf', '444100pg2.pdf', '444100pg3.pdf',
+                           '444101pg1.pdf', '444102pg1.pdf', '444103apg1.pdf',
+                           '444104apg1.pdf' '444104apg2.pdf', '444105apg1.pdf',
+                           '444108pg1.pdf', 'QC123-456pg1.pdf',
+                           'QC123-456pg2.pdf', 'WP123-456pg1.pdf',
+                           'WP123-456pg2.pdf', 'WP123-456apg1.pdf']
 
     def test_find_coc_fn(self):
-        self.fail("The test for testing CoC collection hasn't been written yet.")
+
+        # Some setup and teardown required inside the method here --
+        # global variables used in the method in PDF_collator.py...
+
+        # THIS IS BROKEN - reconsider global variables
+        AUS_COCS = TemporaryDirectory()
+        CORP_COCS = TemporaryDirectory()
+        PT_COCS = TemporaryDirectory()
+
+        # Populate directories with files
+        for f in self.A_set:
+            g = open(os.path.join(AUS_COCS.name, f), 'w')
+            g.close()
+        for i in self.C_set:
+            m = open(os.path.join(CORP_COCS.name, i), 'w')
+            m.close()
+        for j in self.P_set:
+            n = open(os.path.join(PT_COCS.name, j), 'w')
+            n.close()
+
+        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
+                       '555001pg1.pdf')
+        self.assertEqual(coc, os.path.join(AUS_COCS.name, '555001coc.pdf'))
+
+        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
+                       '444104apg1.pdf')
+        self.assertEqual(coc, os.path.join(CORP_COCS.name, '444104a-105acoc.pdf'))
+
+        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
+                       'WP123-456pg2.pdf')
+        self.assertEqual(coc, os.path.join(PT_COCS.name, 'WP123-456coc.pdf'))
+
+        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
+                       'WP123-456apg2.pdf')
+        self.assertEqual(coc, os.path.join(PT_COCS.name, 'WP123-456acoc.pdf'))
+
+        try:
+            for f in os.listdir(AUS_COCS.name):
+                os.remove(os.path.join(AUS_COCS.name, f))
+            if os.path.exists(AUS_COCS.name):
+                AUS_COCS.cleanup()
+
+            for g in os.listdir(CORP_COCS.name):
+                os.remove(os.path.join(CORP_COCS.name, g))
+            if os.path.exists(CORP_COCS.name):
+                CORP_COCS.cleanup()
+
+            for j in os.listdir(self.PT_COCS.name):
+                os.remove(os.path.join(self.PT_COCS.name, j))
+            if os.path.exists(self.PT_COCS.name):
+                self.PT_COCS.cleanup()
+                
+        except OSError:
+            print("There was an error removing the temporary directory and "
+                  "test .DS_Store file from the SystemCheckTest test suite.")
+            print("Error was {0}".format(OSError))
+
+        except FileNotFoundError:
+            print("There was an error removing the temporary directory!")
 
     def test_aggregator_fn(self):
         self.fail("The test for testing the aggregator function hasn't been written yet.")
 
+    def tearDown(self):
+        # Get rid of all of the populated files
+        pass
 
 if __name__ == '__main__':
     unittest.main()
