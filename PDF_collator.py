@@ -7,15 +7,18 @@
 # Something about the proper license    #
 #---------------------------------------#
 
+#    Standard coc filename --> 123456coc.pdf
+#    Multi-PDF coc filename --> 123450-456coc.pdf
+#    Single rerun coc filename --> 123456acoc.pdf
+#    Multi-PDF rerun coc filename --> 123450a-456acoc.pdf
+#    *QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf.
+
 import sys
 import os
 import os.path
 import logging
 import re
 import argparse
-
-# For color output
-#import colorama
 
 # Location for finished, collated reports
 FIN_REPORTS = ''
@@ -24,7 +27,7 @@ REVD_REPORTS = ''
 # Location of CoCs
 AUS_COCS = ''
 CORP_COCS = ''
-PT_COCS = ''    # may or may not be necessary
+PT_COCS = ''
 # Folder to copy reports into after collation
 BILLINGS = ''
 
@@ -165,7 +168,7 @@ def clean():
     # Note, if properly handling exceptions and errors, and also maybe using
     # temporary file systems, this method could become obsolete. That would be
     # a good thing!
-    pass
+    return NotImplementedError
 
 
 def strip_chars(directory):
@@ -217,15 +220,8 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
     """Collects Chain of Custody files given a sequence of target directories
     and list of valid files to match against CoCs.
 
-    Standard coc filename --> 123456coc.pdf
-    Multi-PDF coc filename --> 123450-456coc.pdf
-    Single rerun coc filename --> 123456acoc.pdf
-    Multi-PDF rerun coc filename --> 123450a-456acoc.pdf
-    *QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf.
-
     Returns Chain of Custody path if CoC found, or None.
     """
-
     # Search for pdf in CoC directories
     # Reconsider search algorithm - that's what it is.
     pattern = pdf_name[:-7]
@@ -233,18 +229,15 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
         if i.startswith(pattern):
             if i in A_set:
                 # Austin CoC dir
-                A_path = os.path.dirname(AUS_COCS)
-                coc = os.path.join(A_path, i)
+                coc = os.path.join(AUS_COCS, i)
                 break
             elif i in C_set:
                 # Corpus CoC dir
-                C_path = os.path.dirname(CORP_COCS)
-                coc = os.path.join(C_path, i)
+                coc = os.path.join(CORP_COCS, i)
                 break
             else:
                 # PT CoC dir
-                P_path = os.path.dirname(PT_COCS)
-                coc = os.path.join(P_path, i)
+                coc = os.path.join(PT_COCS, i)
                 break
         else:
             coc = None
@@ -345,8 +338,8 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
 
     i = 0
     while pdf_stack != []:
-        # What about these function variables? Will they be able
-        # to access them from the global variables? I think so...
+        # What about these function variables? Are globals a good idea?
+        # May not be able to test...
         coc = find_coc(coc_list, A_set, C_set, P_set, pdf_stack[i])
 
         # CoC not found!
@@ -467,6 +460,8 @@ def main():
         for num in missing_coc_list:
             print(num)
         print("--------------------")
+        # Does the user still want to continue with the CoCs that were
+        # matched?
     else:
         # Not yet written - need to collect and collate
         pass
