@@ -16,7 +16,7 @@ Features
 
 As of June, 2015, the script has been designed to do the following:
 
-* Checks that necessary filesystems have been mounted.
+* Checks that necessary remote filesystems have been mounted.
 
 * Checks that the full range of files, as indicated by the COC naming scheme.
   If the full range is not found, a warning is given to the user, but proceeds
@@ -36,7 +36,8 @@ As of June, 2015, the script has been designed to do the following:
   than Adobe's software. Testing of additional gs options below is needed to
   enhance compression. 
 
-* Disposes of files after collation, and moves reports to appropriate location.
+* Disposes of files after successful collation, and moves reports to
+  appropriate location.
 
 * Has a reset function to clean up the temporary directory files. This will
   return files to their original location, based on filename. Only needs to 
