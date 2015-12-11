@@ -14,6 +14,7 @@
 #    *QC/WP/SP samples have NO RANGES, but take the form QC###-###coc.pdf.
 
 import sys
+import subprocess
 import os
 import os.path
 import logging
@@ -75,6 +76,19 @@ def system_checks():
                   " navigate to the folder before running this"
                   " program again.\n".format(folder))
             return False
+
+    # Test for ghostscript executable
+    # Download OS X version from http://pages.uoregon.edu/koch/
+    # At time of writing, 9.18 was the current version
+    gs_download = 'http://pages.uoregon.edu/koch'
+    gs_path = '/usr/local/bin/gs'
+    if os.path.exists(gs_path):
+        continue
+    else:
+        print("The ghostscript program is needed for report collation."
+              " Please download it from {0}, install it  and rerun this"
+              " program.".format(gs_download))
+        return False
 
     return True
 
@@ -358,6 +372,7 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
                 if k.startswith(j):
                     matched_pdfs.append(k)
         # Remove pdfs from pdf stack
+        # Consider using sets and recreating the pdf_stack...
         for f in matched_pdfs:
             pdf_stack.remove(f)
 
@@ -367,7 +382,8 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
         else:    # Missing pdfs present
             # Before collation, get user's permission on whether or not
             # they want to proceed.
-            report_dict[report_name] = {'coc': coc, 'pdfs': matched_pdfs,
+            report_dict[report_name] = {'coc': coc,
+                                        'pdfs': matched_pdfs,
                                         'missing_pdfs': missing_pdfs}
             aggregator(missing_coc_list, pdf_stack, report_dict)
 
@@ -388,6 +404,31 @@ def total_file_size(directory):
         print("File {0} could not be found".format(f))
 
     return total_size
+
+def collate(dictionary):
+    # Use the dictionary.keys() method to create a list of keys, then
+    # for each key, pop it out of the dictionary.
+    #
+    # for report in list(mydict.keys()):
+    #     #unpack dictionary
+    #     report['key_name'] = 
+    # 
+    # CoC needs to go last in collation
+    #subprocess.call(["gs", [options], "pdf1", "pdf2", "coc"
+    # Args from shell version:
+    # -o
+    #     -dBATCH [implied]
+    #     -dNOPAUSE [implied]
+    # -q
+    # -sDEVICE=pdfwrite
+    # -dAutoRotatePages=/PageByPage
+    # -sOutputFile=<reportname>
+    # ./*.pdf (grouped all pdfs in order in one directory)
+    # 2>/dev/null
+    #
+    # Maybe also return the reportname, followed by size and compression
+    # stats?
+    return NotImplementedError
 
 
 def main():
@@ -414,7 +455,7 @@ def main():
     bad_coc_names = name_check(AUS_COCS, CORP_COCS)
     if bad_coc_names is not None:
         print("The following CoCs have been improperly named. Please correct "
-              "before running this program again.")
+              "the file names before running this program again.")
         for name in bad_coc_names:
             print(name)
         sys.exit(1)
@@ -465,7 +506,7 @@ def main():
     else:
         # Not yet written - need to collect and collate
         pass
-
+    # Copy final report to "BILLINGS"
 
 if __name__ == '__main__':
     main()
