@@ -10,7 +10,12 @@ from PDF_collator import system_checks, file_check, name_check, strip_chars,\
 
 
 class SystemCheckTest(unittest.TestCase):
-    """Class for testing system checks work in PDF_collator.py."""
+    """Class for testing system checks work in PDF_collator.py.
+    
+    Note that the system_checks() function will fail unless global
+    variables (paths to mounted directories) are defined. These
+    won't be defined until the script is put into production.
+    """
 
     def setUp(self):
         self.test_dir = TemporaryDirectory()
@@ -302,7 +307,6 @@ class ChainCollection(unittest.TestCase):
                            'WP123-456pg2.pdf', 'WP123-456apg1.pdf']
 
     def test_find_coc_fn(self):
-
         # Some setup and teardown required inside the method here --
         # global variables used in the method in PDF_collator.py...
 
