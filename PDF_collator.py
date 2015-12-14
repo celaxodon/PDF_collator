@@ -445,11 +445,10 @@ def total_file_size(file_list):
     """
 
     total_size = 0
-
     # Note that os.path.getsize() is equivalent to instantiating an os.stat
     # object and calling st_size. Just looks cleaner this way.
     try:
-        for f in os.listdir(directory):
+        for f in file_list:
             total_size += os.path.getsize(f)
     except OSError:
         print("File {0} could not be found".format(f))
@@ -474,6 +473,8 @@ def collate(report_name, dictionary):
     gs_list = [os.path.join(REVD_REPORTS, x) for x in dictionary['pdfs']]
     gs_list.append(dictionary['coc'])
 
+    final_report = os.path.join(FIN_REPORTS, report_name)
+
     # Get starting file stats
     start = total_file_size(gs_list)
     
@@ -483,9 +484,10 @@ def collate(report_name, dictionary):
                "-q",
                "-sDEVICE=pdfwrite",
                "-dAutoRotatePages=/PageByPage",
-               "-sOutputFile=%s" % report_name,
+               "-sOutputFile=%s" % final_report,
                ", ".join(gs_list)]
 
+    # Need to handle output
     subprocess.Popen(command)
 
 
