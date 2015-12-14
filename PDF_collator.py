@@ -215,16 +215,17 @@ def strip_chars(directory):
     Pattern is of the form 'job_####', where '#' can be any number of 
     numbers, but usually less than five, followed by a single space.
 
-    Function should return a tuple consisting of a list of the directory's
-    contents (valid names only) and either None, in the event that no bad
-    file names were found, or a list of bad file names if any were found.
+    Function should return a tuple consisting of:
+        - a list of the directory's contents (valid names only), and
+        - None (in the event that no bad file names were found), or a
+          list of bad file names if any were found.
     """
     prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
     name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$')
 
     # New operations
     i = 0
-    bad_file_names = []
+    bad_pdf_names = []
     dirlist = os.listdir(directory)
     while i < len(dirlist):
         if dirlist[i].startswith('job'):
@@ -236,20 +237,20 @@ def strip_chars(directory):
                 dirlist[i] = new
                 # Check validity of new name
                 if not name_RE.fullmatch(dirlist[i]):
-                    bad_file_names.append(dirlist[i])
+                    bad_pdf_names.append(dirlist[i])
                 i += 1
             except IndexError:
-                bad_file_names.append(dirlist[i])
+                bad_pdf_names.append(dirlist[i])
                 i += 1
         else:
             if not name_RE.fullmatch(dirlist[i]):
-                bad_file_names.append(dirlist[i])
+                bad_pdf_names.append(dirlist[i])
             i += 1
 
     #Get a set of only valid names in the directory
-    valid_names = list(set.difference(set(dirlist), set(bad_file_names)))
-    if bad_file_names:
-        return (valid_names, bad_file_names)
+    valid_names = list(set.difference(set(dirlist), set(bad_pdf_names)))
+    if bad_pdf_names:
+        return (valid_names, bad_pdf_names)
     else:
         return (valid_names, None)
 
@@ -504,12 +505,12 @@ def main():
     # Check CoC file names
     print()
     print("Analyzing CoC names...")
-    bad_coc_names, coc_list = name_check(AUS_COCS, CORP_COCS)
-    if bad_coc_names:
+    bad_names, coc_list = name_check(AUS_COCS, CORP_COCS)
+    if bad_names:
         print("The following CoCs have been improperly named. Please correct "
               "the file names before running this program again.")
         print("--------------------")
-        for name in bad_coc_names:
+        for name in bad_names:
             print(" * ", name)
         print("--------------------")
         sys.exit(1)
@@ -532,8 +533,6 @@ def main():
     print("Searching for and matching CoCs...")
 
     # Sets used as input to find_coc fn for faster lookups
-    # The same operation is done in name_check... can it
-    # return the lists?
     A_set = set(os.listdir(AUS_COCS)) # Austin dir
     A_set.discard('.DS_Store')
     C_set = set(os.listdir(CORP_COCS)) # Corpus dir
@@ -541,8 +540,8 @@ def main():
     P_set = set(os.listdir(PT_COCS)) # dir for PT (QC/WP/SP) samples
     P_set.discard('.DS_Store')
 
-    # coc_list is being used outside of its local namespace. Following functions
-    # (aggregator) should still have it in their namespaces.
+    # coc_list and coc_tuple are being used outside of its local namespace.
+    # Following functions (aggregator) should still have it in their namespaces.
     coc_tuple = (A_set, C_set, P_set)
 
     pdf_stack = good_pdf_names[:]
