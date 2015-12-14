@@ -256,9 +256,9 @@ def strip_chars(directory):
 
 
 def find_coc(coc_list, coc_tuple, pdf_name):
-    """Finds and returns location of Chain of Custody files given a
-    sequence of target directories and list of valid files to match
-    against CoCs.
+    """Finds and returns location of a Chain of Custody file given a
+    list of all COCs, a tuple of sets of COCs by directory, and a
+    single PDF name to use for pattern matching.
 
     Arguments:
         'coc_list' - a list of CoCs that have already been checked for
@@ -268,7 +268,8 @@ def find_coc(coc_list, coc_tuple, pdf_name):
                         * 'A_set' - Set of Austin CoCs.
                         * 'C_set' - Set of Corpus CoCs.
                         * 'P_set' - PT sample CoCs.
-        'pdf_name' - A single pdf to match it against
+        'pdf_name' - A single pdf name provides the pattern used to search
+                     for CoC matches.
 
     Returns path to Chain of Custody if the CoC was found, or 'None' in
     the event that it was not (e.g., '/path/to/123456coc.pdf').
@@ -278,20 +279,20 @@ def find_coc(coc_list, coc_tuple, pdf_name):
     pattern = pdf_name[:-7]
     for i in coc_list:
         if i.startswith(pattern):
+            # Austin CoC dir
             if i in coc_tuple[0]:
-                # Austin CoC dir
                 return os.path.join(AUS_COCS, i)
+            # Corpus CoC dir
             elif i in coc_tuple[1]:
-                # Corpus CoC dir
                 return os.path.join(CORP_COCS, i)
+            # PT CoC dir
             else:
-                # PT CoC dir
                 return os.path.join(PT_COCS, i)
-        else:
-            return None
+    # No CoC found
+    return None
 
 
-def backcheck(coc_name, file_list):
+def backcheck(coc_name, pdf_stack):
     """Checks the list of numbers indicated by the CoC file name to make sure
     the ranges a CoC represents are really present in the pdf directory.
     
@@ -305,7 +306,7 @@ def backcheck(coc_name, file_list):
     required_pdfs = get_ranges(coc_name)
 
     # Construct a set of present pdfs, taking off the 'pg?.pdf' suffixes
-    file_set = set([f[:-7] for f in file_list])
+    file_set = {f[:-7] for f in pdf_stack}
 
     # Want to check that all files, as indicated by get_ranges, are present
     # in the file_set. Extra files not in required_pdfs will be present!
@@ -369,7 +370,6 @@ def get_ranges(coc_name):
         return set((str(x) + rerun_char) for x in list(range(first, last)))
 
 
-# May need an initial list for missing_coc_list
 def aggregator(missing_coc_list, pdf_stack, report_dict={}):
     """Function takes in a list of missing cocs, stack of good pdf
     names, and dictionary for collecting reports recursively. Returns two
@@ -381,9 +381,9 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
 
     Takes as input
         'missing_coc_list' - an initially empty list of missing chain of
-                             custodies,
+                             custodies;
         'pdf_stack' - a list of good single-page pdf names (already
-                      sanitized), which is used as a stack,
+                      sanitized), which is used as a stack; and
         'report_dict' - a dictionary consisting of report names, followed
                         by a nested dict of info relating to that report.
 
@@ -397,55 +397,52 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
     The list of missing cocs is added to whenever a coc cannot be found for
     a given PDF, and the pdf stack is reduced for two reasons:
         - when a pdf cannot be matched to a CoC, and
-        - when a series of pdfs match to a given coc range (back checking)
+        - when a series of pdfs match to a given coc range (back-checking)
     """
 
     i = 0
     while pdf_stack:
-        # What about these function variables? Are globals a good idea?
-        # May not be able to test...
-        # This isn't good and needs work. No access to `coc_list` here.
-        coc = find_coc(coc_list, A_set, C_set, P_set, pdf_stack[i])
+        # These function variables aren't in this function's namespace.
+        # How to test?
+        coc = find_coc(coc_list, coc_tuple, pdf_stack[i])
 
-        # CoC not found!
-        if coc == None:
+        # CoC not found?
+        if not coc:
+            # Remove PDF from stack and add to list of PDFs whose CoCs
+            # could not be found. Effectively ignores these PDFs.
             missing_coc_list += pdf_stack.pop(i)
+            # Recursively call function on reduced pdf_stack.
             aggregator(missing_coc_list, pdf_stack, report_dict)
 
         coc_name = os.path.basename(coc)
         report_name = coc_name.replace('coc', '')
         required_pdfs, missing_pdfs = backcheck(coc_name, pdf_stack)
-        matched_pdfs = []
 
-        # get file names (not just nums) for PDFs that match to CoCs
+        # Create list of file names (not just nums) for PDFs that match to CoCs
+        # and remove from pdf_stack.
+        matched_pdfs = []
         for j in required_pdfs:
             for k in pdf_stack:
                 if k.startswith(j):
                     matched_pdfs.append(k)
-        # Remove pdfs from pdf stack
+        # Remove pdfs from pdf stack that back-matched
         # Consider using sets and recreating the pdf_stack...
         for f in matched_pdfs:
             pdf_stack.remove(f)
 
-        if missing_pdfs:
-            report_dict[report_name] = {'coc': coc,
-                                        'pdfs': matched_pdfs,
-                                        'missing_pdfs': missing_pdfs}
-            aggregator(missing_coc_list, pdf_stack, report_dict)
-        else:
-            # Should I pass missing_pdfs = None just so each entry has
-            # the variable?
-            report_dict[report_name] = {'coc': coc, 'pdfs': matched_pdfs}
-            aggregator(missing_coc_list, pdf_stack, report_dict)
-
-
-
+        report_dict[report_name] = {'coc': coc,
+                                    'pdfs': matched_pdfs,
+                                    'missing_pdfs': missing_pdfs}
+        # Recursively call function with updated variables
+        aggregator(missing_coc_list, pdf_stack, report_dict)
 
     return missing_coc_list, report_dict
 
 
-def total_file_size(directory):
-    """Return the size of the files present in a given directory in bytes"""
+def total_file_size(file_list):
+    """Return the size of the files present in a given list of
+    absolute paths to files.
+    """
 
     total_size = 0
 
@@ -459,29 +456,37 @@ def total_file_size(directory):
 
     return total_size
 
-def collate(dictionary):
-    # Use the dictionary.keys() method to create a list of keys, then
-    # for each key, pop it out of the dictionary.
-    for report in list(dictionary.keys()):
-        #unpack dictionary
-        dictionary.pop(report)
-    #
+def collate(report_name, dictionary):
+    """Function takes in a report name and a dictionary describing the
+    report's contents. Reports are collated by using ghostscript, which
+    is invoked through a subprocess.
+
+    The dictionary contains the following keys:
+        'coc' - A full path to the COC used. Needs to be last in the order
+        'pdfs' - A list of PDFs to be used from REVD_REPORTS directory.
+        'missing_pdfs' - either `None` or a list of missing PDFs that were
+        not found during the back-check.
+    """
+    # Check for missing PDFs (from back check) and get user's permission
+    # to continue.
+
+    # Construct list of input of absolute file names
+    gs_list = [os.path.join(REVD_REPORTS, x) for x in dictionary['pdfs']]
+    gs_list.append(dictionary['coc'])
+
+    # Get starting file stats
+    start = total_file_size(gs_list)
+    
     # CoC needs to go last in collation
-    subprocess.call(["gs", [options], pdf_list, "coc"])
-    # Args from shell version:
-    # -o
-    #     -dBATCH [implied]
-    #     -dNOPAUSE [implied]
-    # -q
-    # -sDEVICE=pdfwrite
-    # -dAutoRotatePages=/PageByPage
-    # -sOutputFile=<reportname>
-    # ./*.pdf (grouped all pdfs in order in one directory)
-    # 2>/dev/null
-    #
-    # Maybe also return the reportname, followed by size and compression
-    # stats?
-    return NotImplementedError
+    command = ["gs",
+               "-o",
+               "-q",
+               "-sDEVICE=pdfwrite",
+               "-dAutoRotatePages=/PageByPage",
+               "-sOutputFile=%s" % report_name,
+               ", ".join(gs_list)]
+
+    subprocess.Popen(command)
 
 
 def main():
@@ -549,15 +554,16 @@ def main():
     missing_coc_list = []
     missing_coc_list, report_dict = aggregator(missing_coc_list, pdf_stack)
 
-    # Get user's consent to continue execution, despite missing PDFs being
+    # Get user's consent to continue execution, despite missing COCs being
     # detected.
     if missing_coc_list:
-        print("The following files could not be matched with a CoC.")
+        print("The following PDFs could not be matched with a CoC and will be"
+              " ignored.")
         print("Please check that the CoCs exist before running this program "
               "again.\n")
         print("--------------------")
         for num in missing_coc_list:
-            print(num)
+            print(' * ', num)
         print("--------------------")
         ans = input("Do you want to continue with other reports? (y/n)\n")
         while True:
@@ -571,9 +577,17 @@ def main():
                 print("Yes ('y') or no ('n'), please.")
                 ans = input("Continue program? (y/n)\n")
     else:
-        # Not yet written - need to collect and collate
-        pass
+        for report_name in list(report_dict.keys()):
+            #unpack dictionary
+            dictionary = report_dict.pop(report_name)
+            collate(report_name, dictionary)
+            # Move files to user's trash
+
     # Copy final report to "BILLINGS"
+    for item in os.listdir(FIN_REPORTS):
+        shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
+
+    # Report size difference (compression)
 
 if __name__ == '__main__':
     main()
