@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-#---------------------------------------#
-#           PDF Collator v.01           #
-#        Written by Graham Leva         #
-#     Copyright (c) 2015 AnalySys, Inc. #
-# Something about the proper license    #
-#---------------------------------------#
+#-----------------------------------------#
+#            PDF Collator v.01            #
+#          Written by Graham Leva         #
+#     Copyright (c) 2015 AnalySys, Inc.   #
+#    Something about the proper license   #
+#-----------------------------------------#
 
 #    Standard coc filename --> 123456coc.pdf
 #    Multi-PDF coc filename --> 123450-456coc.pdf
@@ -20,6 +20,7 @@ import os.path
 import logging
 import re
 import argparse
+
 
 # Location for finished, collated reports
 FIN_REPORTS = ''
@@ -82,9 +83,8 @@ def system_checks():
     # At time of writing, 9.18 was the current version
     gs_download = 'http://pages.uoregon.edu/koch'
     gs_path = '/usr/local/bin/gs'
-    if os.path.exists(gs_path):
-        continue
-    else:
+
+    if not os.path.exists(gs_path):
         print("The ghostscript program is needed for report collation."
               " Please download it from {0}, install it  and rerun this"
               " program.".format(gs_download))
@@ -94,7 +94,10 @@ def system_checks():
 
 
 def file_check(directory):
-    """Test existance of files for collation in target directory."""
+    """Test existence of files for collation in target directory.
+
+    Takes as argument a target `directory` to check for files in.
+    """
     # Consider checking for .afp_[\d]+ files in collation directory
 
     if len(os.listdir(directory)) == 0:
@@ -231,10 +234,20 @@ def strip_chars(directory):
 
 
 def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
-    """Collects Chain of Custody files given a sequence of target directories
-    and list of valid files to match against CoCs.
+    """Finds and returns location of Chain of Custody files given a
+    sequence of target directories and list of valid files to match
+    against CoCs.
 
-    Returns Chain of Custody path if CoC found, or None.
+    Arguments:
+        'coc_list' - a list of CoCs that have already been checked for
+                     syntax mistakes.
+        'A_set' - Set of Austin CoCs.
+        'C_set' - Set of Corpus CoCs.
+        'P_set' - PT sample CoCs.
+        'pdf_name' - A single pdf to match it against
+
+    Returns path to Chain of Custody if the CoC was found, or 'None' in
+    the event that it was not (e.g., '/path/to/123456coc.pdf').
     """
     # Search for pdf in CoC directories
     # Reconsider search algorithm - that's what it is.
@@ -243,20 +256,16 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
         if i.startswith(pattern):
             if i in A_set:
                 # Austin CoC dir
-                coc = os.path.join(AUS_COCS, i)
-                break
+                return os.path.join(AUS_COCS, i)
             elif i in C_set:
                 # Corpus CoC dir
-                coc = os.path.join(CORP_COCS, i)
-                break
+                return os.path.join(CORP_COCS, i)
             else:
                 # PT CoC dir
-                coc = os.path.join(PT_COCS, i)
-                break
+                return os.path.join(PT_COCS, i)
         else:
             coc = None
-    return coc
-                
+
 
 def backcheck(coc_name, file_list):
     """Checks the list of numbers indicated by the CoC file name to make sure
@@ -287,6 +296,8 @@ def backcheck(coc_name, file_list):
 def get_ranges(coc_name):
     """Return a set of ranges from a range coc string.
 
+    'coc_name' - A range coc name, like '123456-470coc.pdf'.
+
     For example, '123456-460coc.pdf' would return:
         ['123456', '123457', '123458', '123459', '123460']
 
@@ -301,13 +312,13 @@ def get_ranges(coc_name):
     # Cut 'coc.pdf'
     r = coc_name[:-7]
     if r.startswith(('QC', 'WP', 'SP')):
-        return set([r])
+        return {r}
     elif '-' in r:
         first, last = r.split('-')
         last = first[:3] + last
     # No range at all - single number CoC
     else:
-        return set([r])
+        return {r}
 
     # handle rerun versus normal range CoC
     if first.isnumeric():
@@ -334,26 +345,42 @@ def get_ranges(coc_name):
         return set((str(x) + rerun_char) for x in list(range(first, last)))
 
 
+# May need an initial list for missing_coc_list
 def aggregator(missing_coc_list, pdf_stack, report_dict={}):
-    """Return dictionary consisting of CoC location, the associated pdfs and
-    report names. Also return a list of pdfs for which chains could not be
-    found or 'None' in the case that all CoCs were found for PDFs.
+    """Function takes in a list of missing cocs, stack of good pdf
+    names, and dictionary for collecting reports recursively. Returns two
+    variables: (1) a list of pdfs for which chains could not be
+    found or 'None' in the case that all CoCs were found for PDFs, and
+    (2) a dictionary consisting of dictionaries whose keys are the report
+    names and values are CoC location, the associated pdfs and missing pdfs
+    after being back-checked from the coc range.
 
-    Takes as input an initially empty list of missing chain of custodies, a
-    list of good pdf names (already sanitized), which is used as a stack,
-    and a dictionary consisting of report names, followed by a nested dict
-    of info relating to that report. 
+    Takes as input
+        'missing_coc_list' - an initially empty list of missing chain of
+                             custodies,
+        'pdf_stack' - a list of good single-page pdf names (already
+                      sanitized), which is used as a stack,
+        'report_dict' - a dictionary consisting of report names, followed
+                        by a nested dict of info relating to that report.
+
+    Example return report dictionary:
+
+    {'123456-458.pdf': {'coc': '/path/to/123456-458coc.pdf',
+                        'pdfs': ['123456pg1.pdf', '123457pg1.pdf'],
+                        'missing_pdfs' = ['123458']}
+    }
 
     The list of missing cocs is added to whenever a coc cannot be found for
-    a given PDF, and the pdf stack is reduced in several situations:
-        - when a pdf cannot be matched to a CoC
+    a given PDF, and the pdf stack is reduced for two reasons:
+        - when a pdf cannot be matched to a CoC, and
         - when a series of pdfs match to a given coc range (back checking)
     """
 
     i = 0
-    while pdf_stack != []:
+    while pdf_stack:
         # What about these function variables? Are globals a good idea?
         # May not be able to test...
+        # This isn't good and needs work. No access to `coc_list` here.
         coc = find_coc(coc_list, A_set, C_set, P_set, pdf_stack[i])
 
         # CoC not found!
@@ -376,16 +403,19 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
         for f in matched_pdfs:
             pdf_stack.remove(f)
 
-        if missing_pdfs == None:
-            report_dict[report_name] = {'coc': coc, 'pdfs': matched_pdfs}
-            aggregator(missing_coc_list, pdf_stack, report_dict)
-        else:    # Missing pdfs present
-            # Before collation, get user's permission on whether or not
-            # they want to proceed.
+        if missing_pdfs:
             report_dict[report_name] = {'coc': coc,
                                         'pdfs': matched_pdfs,
                                         'missing_pdfs': missing_pdfs}
             aggregator(missing_coc_list, pdf_stack, report_dict)
+        else:
+            # Should I pass missing_pdfs = None just so each entry has
+            # the variable?
+            report_dict[report_name] = {'coc': coc, 'pdfs': matched_pdfs}
+            aggregator(missing_coc_list, pdf_stack, report_dict)
+
+
+
 
     return missing_coc_list, report_dict
 
@@ -408,13 +438,12 @@ def total_file_size(directory):
 def collate(dictionary):
     # Use the dictionary.keys() method to create a list of keys, then
     # for each key, pop it out of the dictionary.
+    for report in list(dictionary.keys()):
+        #unpack dictionary
+        dictionary.pop(report)
     #
-    # for report in list(mydict.keys()):
-    #     #unpack dictionary
-    #     report['key_name'] = 
-    # 
     # CoC needs to go last in collation
-    #subprocess.call(["gs", [options], "pdf1", "pdf2", "coc"
+    subprocess.call(["gs", [options], pdf_list, "coc"])
     # Args from shell version:
     # -o
     #     -dBATCH [implied]
@@ -444,7 +473,7 @@ def main():
         print("System checks failed. Program exiting.")
         sys.exit(1)
 
-    if file_check() == False:
+    if file_check(REVD_REPORTS) == False:
         print("No files exist in the reviewed reports folder for collation.")
         print("Program exiting.\n")
         sys.exit(0)
@@ -464,7 +493,7 @@ def main():
     print()
     print("Analyzing and fixing file names...")
     good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
-    if bad_pdf_names != None:
+    if bad_pdf_names is None:
         print("An error has occured when stripping file names!")
         print("The following PDFs do not match the correct naming scheme "
               "and will be ignored:")
@@ -484,6 +513,8 @@ def main():
     C_set.discard('.DS_Store')
     P_set = set(os.listdir(PT_COCS)) # dir for PT (QC/WP/SP) samples
     P_set.discard('.DS_Store')
+    # coc_list is being sort of used as a global here. Following functions
+    # (aggregator) should still have it in their namespaces.
     coc_list = list(A_set.union(C_set).union(P_set))
 
     pdf_stack = good_pdf_names[:]    # Necessary?
@@ -493,7 +524,7 @@ def main():
 
     # Get user's consent to continue execution, despite missing PDFs being
     # detected.
-    if missing_coc_list != []:
+    if missing_coc_list:
         print("The following files could not be matched with a CoC.")
         print("Please check that the CoCs exist before running this program "
               "again.\n")
