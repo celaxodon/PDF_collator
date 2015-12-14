@@ -242,10 +242,10 @@ def strip_chars(directory):
 
     #Get a set of only valid names in the directory
     valid_names = list(set.difference(set(dirlist), set(bad_file_names)))
-    if len(bad_file_names) == 0:
-        return (valid_names, None)
-    else:
+    if bad_file_names:
         return (valid_names, bad_file_names)
+    else:
+        return (valid_names, None)
 
 
 def find_coc(coc_list, coc_tuple, pdf_name):
@@ -508,9 +508,9 @@ def main():
 
     # Get rid of job_#### prefixes and check namings
     print()
-    print("Analyzing and fixing file names...")
+    print("Analyzing and fixing PDF names...")
     good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
-    if bad_pdf_names is None:
+    if bad_pdf_names:
         print("An error has occured when stripping file names!")
         print("The following PDFs do not match the correct naming scheme "
               "and will be ignored:")
@@ -524,6 +524,8 @@ def main():
     print("Searching for and matching CoCs...")
 
     # Sets used as input to find_coc fn for faster lookups
+    # The same operation is done in name_check... can it
+    # return the lists?
     A_set = set(os.listdir(AUS_COCS)) # Austin dir
     A_set.discard('.DS_Store')
     C_set = set(os.listdir(CORP_COCS)) # Corpus dir
