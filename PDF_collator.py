@@ -124,9 +124,14 @@ def file_check(directory):
 def name_check(*args):
     """Test for incorrect Chain of Custody labels before running each time.
 
-    Takes as arguments a series of directories to check CoC syntax.
+    Takes as arguments a series of directories to check CoC file names.
 
-    Returns a list of bad file names, or None, if name check passes.
+    Returns a tuple, consisting of:
+        - A list of bad file names, or None, if name check passes;
+        - A list of all CoC names for use in other functions.
+
+    Note that the script in main() will exit if any bad file names
+    are returned.
     """
 
     bad_names = []
@@ -503,8 +508,10 @@ def main():
     if bad_coc_names:
         print("The following CoCs have been improperly named. Please correct "
               "the file names before running this program again.")
+        print("--------------------")
         for name in bad_coc_names:
-            print(name)
+            print(" * ", name)
+        print("--------------------")
         sys.exit(1)
 
     # Get rid of job_#### prefixes and check namings
@@ -517,7 +524,7 @@ def main():
               "and will be ignored:")
         print("--------------------")
         for name in bad_pdf_names:
-            print(name)
+            print(" * ", name)
         print("--------------------")
 
     # Collect and analyze PDFs vs. CoCs
@@ -534,12 +541,11 @@ def main():
     P_set = set(os.listdir(PT_COCS)) # dir for PT (QC/WP/SP) samples
     P_set.discard('.DS_Store')
 
-    # coc_list is being sort of used as a global here. Following functions
+    # coc_list is being used outside of its local namespace. Following functions
     # (aggregator) should still have it in their namespaces.
-    coc_list = list(A_set.union(C_set).union(P_set))
     coc_tuple = (A_set, C_set, P_set)
 
-    pdf_stack = good_pdf_names[:]    # Necessary?
+    pdf_stack = good_pdf_names[:]
     # The list of all pdfs for which no CoC could be found
     missing_coc_list = []
     missing_coc_list, report_dict = aggregator(missing_coc_list, pdf_stack)
