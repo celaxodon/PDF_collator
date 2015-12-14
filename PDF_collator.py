@@ -130,50 +130,51 @@ def name_check(*args):
     """
 
     bad_names = []
+    coc_list = []
+    # Get list of all COCs
+    for path in args:
+        coc_list.extend(os.listdir(path))
+        # Remove OS X-specific directory services store file
+        #clean_list = list(filter(lambda x: x != '.DS_Store', coc_list))
+        if '.DS_Store' in coc_list:
+            coc_list.remove('.DS_Store')
+
     # Need to account for repeat files - 400-400coc.pdf
     # What if two reports needing the same file. Different function - find_cocs
     # Need to account for report ranges decrementing instead of incrementing.
     coc_RE = re.compile('([\\d]{3}([\\d]{3})([a-d]{1})?(-([\\d]{3})(\\3)?)?coc\\.pdf$|(QC|WP|SP)([\\d]{3})-([\\d]{3})coc\\.pdf$)')
 
-    for path in args:
-        coc_list = os.listdir(path)
-        # Less clear than below
-        #clean_list = list(filter(lambda x: x != '.DS_Store', coc_list))
-        # Remove OS X-specific directory services store file
-        if '.DS_Store' in coc_list:     
-            coc_list.remove('.DS_Store')
-
-        for i in coc_list:
-            match = coc_RE.fullmatch(i)
-            # Full match exists!
-            if match is not None:
-                if i.startswith(("QC", "SP", "WP")):
-                    # Don't worry about ranges for these samples.
-                    continue
-                elif '-' in i:
-                    first = int(match.group(2))
-                    last = int(match.group(5))
-                    diff = abs(last - first)
-                    # First range number shouldn't match the second
-                    if diff == 0:
-                        bad_names.append(i)
-                    # Check that second group is incrementing
-                    # If range is 400990-010, (incrementing) diff = 980
-                    # If range is 400990-960, (decrementing) diff = 30
-                    elif last < first and diff < 100:
-                        bad_names.append(i)
-                    else:
-                        continue
+    for i in coc_list:
+        match = coc_RE.fullmatch(i)
+        # Full match exists!
+        if match:
+            if i.startswith(("QC", "SP", "WP")):
+                # Don't worry about ranges for these samples.
+                continue
+            elif '-' in i:
+                first = int(match.group(2))
+                last = int(match.group(5))
+                diff = abs(last - first)
+                # First range number shouldn't match the second
+                if diff == 0:
+                    bad_names.append(i)
+                # Check that second group is incrementing
+                # If range is 400990-010, (incrementing) diff = 980
+                # If range is 400990-960, (decrementing) diff = 30
+                elif last < first and diff < 100:
+                    bad_names.append(i)
                 else:
-                    # Normal CoCs - 123456coc.pdf or 123456acoc.pdf
                     continue
             else:
-                bad_names.append(i)
+                # Normal CoCs - 123456coc.pdf or 123456acoc.pdf
+                continue
+        else:
+            bad_names.append(i)
 
     if bad_names:
-        return bad_names
+        return (bad_names, coc_list)
     else:
-        return None
+        return (None, coc_list)
                 
 
 def parser_setup():
@@ -498,8 +499,8 @@ def main():
     # Check CoC file names
     print()
     print("Analyzing CoC names...")
-    bad_coc_names = name_check(AUS_COCS, CORP_COCS)
-    if bad_coc_names is not None:
+    bad_coc_names, coc_list = name_check(AUS_COCS, CORP_COCS)
+    if bad_coc_names:
         print("The following CoCs have been improperly named. Please correct "
               "the file names before running this program again.")
         for name in bad_coc_names:

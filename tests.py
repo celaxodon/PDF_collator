@@ -77,6 +77,7 @@ class NameChecks(unittest.TestCase):
                          '123500-500coc.pdf', '123456a-123460coc.pdf',
                          '123456-123460acoc.pdf', '123400-390coc.pdf',
                          'QP123-345coc.pdf', 'WP123-34coc.pdf']
+        self.coc_list = []
 
         self.tmpdir = TemporaryDirectory()
         self.tmpdir2 = TemporaryDirectory()
@@ -103,7 +104,7 @@ class NameChecks(unittest.TestCase):
 
 
     def testFileNames(self):
-        self.returned_list = name_check(self.tmpdir.name)
+        self.returned_list, self.coc_list = name_check(self.tmpdir.name)
         self.new_bad_list = self.bad_list
         self.new_bad_list.remove('.DS_Store')
         # Using sets b/c lists don't return same order.
@@ -111,10 +112,10 @@ class NameChecks(unittest.TestCase):
         s2 = set(self.returned_list)
         self.assertEqual(s1, s2)
 
-        self.valid_return = name_check(self.tmpdir2.name)
+        self.valid_return, self.coc_list = name_check(self.tmpdir2.name)
         self.assertEqual(self.valid_return, None)
 
-        self.two_args_check = name_check(self.tmpdir3.name, self.tmpdir4.name)
+        self.two_args_check, self.coc_list = name_check(self.tmpdir3.name, self.tmpdir4.name)
         self.assertEqual(s1, set(self.two_args_check))
 
     def tearDown(self):
