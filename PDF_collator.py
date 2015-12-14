@@ -37,6 +37,15 @@ BILLINGS = ''
 def system_checks():
     """Check required software is installed and that remote file system
     directories are mounted.
+
+    Checks for the following:
+      - System is OS X
+      - Required network drives are mounted
+      - Specific directories exist on filesystem
+      - Ghostscript install is present on the machine
+
+    Returns `False` in the event that any of the checks fail. Users
+    can override the OS X requirement.
     """
     dir_list = ['Data', 'scans', 'Admin']
 
@@ -97,6 +106,10 @@ def file_check(directory):
     """Test existence of files for collation in target directory.
 
     Takes as argument a target `directory` to check for files in.
+
+    Returns True if files exist and are relevant or False if
+    either no files exist or files that exist are irrelevant (e.g.,
+    system-specific files like .DS_Store).
     """
     # Consider checking for .afp_[\d]+ files in collation directory
 
@@ -105,11 +118,13 @@ def file_check(directory):
     elif len(os.listdir(directory)) == 1 and '.DS_Store' in os.listdir(directory):
         return False
     else:
-        return True    # Files exist and they're not irrelevant
+        return True    # Files exist and they're relevant
 
 
 def name_check(*args):
     """Test for incorrect Chain of Custody labels before running each time.
+
+    Takes as arguments a series of directories to check CoC syntax.
 
     Returns a list of bad file names, or None, if name check passes.
     """
@@ -155,10 +170,10 @@ def name_check(*args):
             else:
                 bad_names.append(i)
 
-    if len(bad_names) == 0:
-        return None
-    else:
+    if bad_names:
         return bad_names
+    else:
+        return None
                 
 
 def parser_setup():
@@ -192,7 +207,7 @@ def strip_chars(directory):
     """Strip leading characters from file names in a specified directory. 
 
     Pattern is of the form 'job_####', where '#' can be any number of 
-    numbers, but usually less than five.
+    numbers, but usually less than five, followed by a single space.
 
     Function should return a tuple consisting of a list of the directory's
     contents (valid names only) and either None, in the event that no bad
@@ -233,7 +248,7 @@ def strip_chars(directory):
         return (valid_names, bad_file_names)
 
 
-def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
+def find_coc(coc_list, coc_tuple, pdf_name):
     """Finds and returns location of Chain of Custody files given a
     sequence of target directories and list of valid files to match
     against CoCs.
@@ -241,9 +256,11 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
     Arguments:
         'coc_list' - a list of CoCs that have already been checked for
                      syntax mistakes.
-        'A_set' - Set of Austin CoCs.
-        'C_set' - Set of Corpus CoCs.
-        'P_set' - PT sample CoCs.
+        'coc_tuple' - a tuple consisting of three sets, used for finding
+                      the location of a coc in the filesystem:
+                        * 'A_set' - Set of Austin CoCs.
+                        * 'C_set' - Set of Corpus CoCs.
+                        * 'P_set' - PT sample CoCs.
         'pdf_name' - A single pdf to match it against
 
     Returns path to Chain of Custody if the CoC was found, or 'None' in
@@ -254,17 +271,17 @@ def find_coc(coc_list, A_set, C_set, P_set, pdf_name):
     pattern = pdf_name[:-7]
     for i in coc_list:
         if i.startswith(pattern):
-            if i in A_set:
+            if i in coc_tuple[0]:
                 # Austin CoC dir
                 return os.path.join(AUS_COCS, i)
-            elif i in C_set:
+            elif i in coc_tuple[1]:
                 # Corpus CoC dir
                 return os.path.join(CORP_COCS, i)
             else:
                 # PT CoC dir
                 return os.path.join(PT_COCS, i)
         else:
-            coc = None
+            return None
 
 
 def backcheck(coc_name, file_list):
@@ -513,9 +530,11 @@ def main():
     C_set.discard('.DS_Store')
     P_set = set(os.listdir(PT_COCS)) # dir for PT (QC/WP/SP) samples
     P_set.discard('.DS_Store')
+
     # coc_list is being sort of used as a global here. Following functions
     # (aggregator) should still have it in their namespaces.
     coc_list = list(A_set.union(C_set).union(P_set))
+    coc_tuple = (A_set, C_set, P_set)
 
     pdf_stack = good_pdf_names[:]    # Necessary?
     # The list of all pdfs for which no CoC could be found
@@ -532,8 +551,17 @@ def main():
         for num in missing_coc_list:
             print(num)
         print("--------------------")
-        # Does the user still want to continue with the CoCs that were
-        # matched?
+        ans = input("Do you want to continue with other reports? (y/n)\n")
+        while True:
+            lower_ans = str(ans).lower()
+            if lower_ans == 'y' or lower_ans == 'yes':
+                # Continue with checks
+                break
+            elif lower_ans == 'n' or lower_ans == 'no':
+                sys.exit(0)
+            else:
+                print("Yes ('y') or no ('n'), please.")
+                ans = input("Continue program? (y/n)\n")
     else:
         # Not yet written - need to collect and collate
         pass
