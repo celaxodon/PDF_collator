@@ -311,7 +311,7 @@ class ChainCollection(unittest.TestCase):
         # Some setup and teardown required inside the method here --
         # global variables used in the method in PDF_collator.py...
 
-        # THIS IS BROKEN - reconsider global variables
+        # THIS IS BROKEN because the function uses global variables!
         AUS_COCS = TemporaryDirectory()
         CORP_COCS = TemporaryDirectory()
         PT_COCS = TemporaryDirectory()
@@ -326,21 +326,18 @@ class ChainCollection(unittest.TestCase):
         for j in self.P_set:
             n = open(os.path.join(PT_COCS.name, j), 'w')
             n.close()
+        coc_tuple = (self.A_set, self.C_set, self.P_set)
 
-        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
-                       '555001pg1.pdf')
+        coc = find_coc(self.coc_list, coc_tuple, '555001pg1.pdf')
         self.assertEqual(coc, os.path.join(AUS_COCS.name, '555001coc.pdf'))
 
-        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
-                       '444104apg1.pdf')
+        coc = find_coc(self.coc_list, coc_tuple, '444104apg1.pdf')
         self.assertEqual(coc, os.path.join(CORP_COCS.name, '444104a-105acoc.pdf'))
 
-        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
-                       'WP123-456pg2.pdf')
+        coc = find_coc(self.coc_list, coc_tuple, 'WP123-456pg2.pdf')
         self.assertEqual(coc, os.path.join(PT_COCS.name, 'WP123-456coc.pdf'))
 
-        coc = find_coc(self.coc_list, self.A_set, self.C_set, self.P_set,
-                       'WP123-456apg2.pdf')
+        coc = find_coc(self.coc_list, coc_tuple, 'WP123-456apg2.pdf')
         self.assertEqual(coc, os.path.join(PT_COCS.name, 'WP123-456acoc.pdf'))
 
         try:
