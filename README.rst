@@ -92,7 +92,13 @@ To do:
 ------
 
 - logging
-- CoC collation
+- CoC collation - subprocess.Popen()
+  - Handle errors and output DEVNULL
+
+- Cleanup of files after successful collation
+  - How do we know it worked?
+  - Move target files to the trash
+
 - Compression stats
   - Function should take a file and return its size (KB/MB/GB) -- both of the
     below return size in bytes
