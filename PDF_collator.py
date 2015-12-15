@@ -414,14 +414,14 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
     stack_copy = pdf_stack[:]
     i = 0
     while pdf_stack != []:
-        # Namespace issues here. Structure may need rethinking
+
         coc = find_coc(coc_list, coc_tuple, pdf_stack[i])
 
         # CoC not found?
         if coc is None:
             # Remove PDF from stack and add to list of PDFs whose CoCs
             # could not be found. Effectively ignores these PDFs.
-            missing_coc_list += pdf_stack.pop(i)
+            missing_coc_list.append(pdf_stack.pop(i))
             # Recursively call function on reduced pdf_stack.
             aggregator(coc_list, coc_tuple, missing_coc_list,
                        pdf_stack, report_dict)
