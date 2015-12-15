@@ -20,18 +20,19 @@ import os.path
 import logging
 import re
 import argparse
+import shutil
 
 
 # Location for finished, collated reports
-FIN_REPORTS = ''
+FIN_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Finished'
 # Location for reports that have been reviewed, but not collated
-REVD_REPORTS = ''
+REVD_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Reviewed'
 # Location of CoCs
-AUS_COCS = ''
-CORP_COCS = ''
-PT_COCS = ''
+AUS_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Aus'
+CORP_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Corp'
+PT_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/PT'
 # Folder to copy reports into after collation
-BILLINGS = ''
+BILLINGS = '/Users/grahamleva/src/PDF_collator/functional_tests/Billings'
 
 
 def system_checks():
@@ -70,6 +71,7 @@ def system_checks():
         if os.path.exists(os.path.join('/Volumes', d)): # Directory is mounted
             continue
         else:
+            print()
             print()
             print("This program cannot run unless you have the '{0}' folder "
                   "mounted.".format(d))
@@ -293,11 +295,19 @@ def find_coc(coc_list, coc_tuple, pdf_name):
 
 
 def backcheck(coc_name, pdf_stack):
-    """Checks the list of numbers indicated by the CoC file name to make sure
-    the ranges a CoC represents are really present in the pdf directory.
+    """Checks the list of numbers indicated by the CoC file name to
+    make sure the ranges a CoC represents are really present in the pdf
+    directory.
+
+    Note that there is no way to generate actual PDF names that are
+    missing, based on ranges in CoC names. We can only return the
+    numbers.
     
-    Returns the list of required PDFs and 'None' if there are no missing pdfs
-    from the ranges indicated; otherwise returns the missing numbers in a list.
+    Returns two values:
+        'required_pdfs' - A list of required PDFs numbers based on the
+                          coc name, and
+        'missing_pdfs'  - A list of pdf numbers that were not found, or
+                          `None`, if all were accounted for.
     """
 
     #QC --> ('QC123-456')
@@ -370,7 +380,7 @@ def get_ranges(coc_name):
         return set((str(x) + rerun_char) for x in list(range(first, last)))
 
 
-def aggregator(missing_coc_list, pdf_stack, report_dict={}):
+def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={}):
     """Function takes in a list of missing cocs, stack of good pdf
     names, and dictionary for collecting reports recursively. Returns two
     variables: (1) a list of pdfs for which chains could not be
@@ -402,39 +412,40 @@ def aggregator(missing_coc_list, pdf_stack, report_dict={}):
 
     i = 0
     while pdf_stack:
-        # These function variables aren't in this function's namespace.
-        # How to test?
+        # Namespace issues here. Structure may need rethinking
         coc = find_coc(coc_list, coc_tuple, pdf_stack[i])
 
         # CoC not found?
-        if not coc:
+        if coc is None:
             # Remove PDF from stack and add to list of PDFs whose CoCs
             # could not be found. Effectively ignores these PDFs.
             missing_coc_list += pdf_stack.pop(i)
             # Recursively call function on reduced pdf_stack.
-            aggregator(missing_coc_list, pdf_stack, report_dict)
+            aggregator(coc_list, coc_tuple, missing_coc_list,
+                       pdf_stack, report_dict)
+        else:
+            coc_name = os.path.basename(coc)
+            report_name = coc_name.replace('coc', '')
+            required_pdfs, missing_pdfs = backcheck(coc_name, pdf_stack)
 
-        coc_name = os.path.basename(coc)
-        report_name = coc_name.replace('coc', '')
-        required_pdfs, missing_pdfs = backcheck(coc_name, pdf_stack)
+            # Create list of file names (not just nums) for PDFs that match to CoCs
+            # and remove from pdf_stack.
+            matched_pdfs = []
+            for j in required_pdfs:
+                for k in pdf_stack:
+                    if k.startswith(j):
+                        matched_pdfs.append(k)
+            # Remove pdfs from pdf stack that back-matched
+            # Consider using sets and recreating the pdf_stack...
+            for f in matched_pdfs:
+                pdf_stack.remove(f)
 
-        # Create list of file names (not just nums) for PDFs that match to CoCs
-        # and remove from pdf_stack.
-        matched_pdfs = []
-        for j in required_pdfs:
-            for k in pdf_stack:
-                if k.startswith(j):
-                    matched_pdfs.append(k)
-        # Remove pdfs from pdf stack that back-matched
-        # Consider using sets and recreating the pdf_stack...
-        for f in matched_pdfs:
-            pdf_stack.remove(f)
-
-        report_dict[report_name] = {'coc': coc,
-                                    'pdfs': matched_pdfs,
-                                    'missing_pdfs': missing_pdfs}
-        # Recursively call function with updated variables
-        aggregator(missing_coc_list, pdf_stack, report_dict)
+            report_dict[report_name] = {'coc': coc,
+                                        'pdfs': matched_pdfs,
+                                        'missing_pdfs': missing_pdfs}
+            # Recursively call function with updated variables
+            aggregator(coc_list, coc_tuple, missing_coc_list,
+                    pdf_stack, report_dict)
 
     return missing_coc_list, report_dict
 
@@ -500,8 +511,7 @@ def main():
     if system_checks():
         print("Passed.")
     else:
-        print()
-        print("System checks failed. Program exiting.")
+        print("System checks failed. Program exiting.\n")
         sys.exit(1)
 
     if file_check(REVD_REPORTS) == False:
@@ -527,7 +537,7 @@ def main():
     print("Analyzing and fixing PDF names...")
     good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
     if bad_pdf_names:
-        print("An error has occured when stripping file names!")
+        print("An error has occurred when stripping file names!")
         print("The following PDFs do not match the correct naming scheme "
               "and will be ignored:")
         print("--------------------")
@@ -554,7 +564,8 @@ def main():
     pdf_stack = good_pdf_names[:]
     # The list of all pdfs for which no CoC could be found
     missing_coc_list = []
-    missing_coc_list, report_dict = aggregator(missing_coc_list, pdf_stack)
+    missing_coc_list, report_dict = aggregator(coc_list, coc_tuple,
+                                               missing_coc_list, pdf_stack)
 
     # Get user's consent to continue execution, despite missing COCs being
     # detected.
