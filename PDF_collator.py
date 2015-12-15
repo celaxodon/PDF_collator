@@ -409,9 +409,11 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
         - when a pdf cannot be matched to a CoC, and
         - when a series of pdfs match to a given coc range (back-checking)
     """
+    
 
+    stack_copy = pdf_stack[:]
     i = 0
-    while pdf_stack:
+    while pdf_stack != []:
         # Namespace issues here. Structure may need rethinking
         coc = find_coc(coc_list, coc_tuple, pdf_stack[i])
 
@@ -445,7 +447,7 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
                                         'missing_pdfs': missing_pdfs}
             # Recursively call function with updated variables
             aggregator(coc_list, coc_tuple, missing_coc_list,
-                    pdf_stack, report_dict)
+                       pdf_stack, report_dict)
 
     return missing_coc_list, report_dict
 
@@ -498,7 +500,7 @@ def collate(report_name, dictionary):
                "-sOutputFile=%s" % final_report,
                ", ".join(gs_list)]
 
-    # Need to handle output
+    # Need to handle stdout and stderr
     subprocess.Popen(command)
 
 
@@ -576,7 +578,7 @@ def main():
               "again.\n")
         print("--------------------")
         for num in missing_coc_list:
-            print(' * ', num)
+            print(' * ', missing_coc_list)
         print("--------------------")
         ans = input("Do you want to continue with other reports? (y/n)\n")
         while True:
