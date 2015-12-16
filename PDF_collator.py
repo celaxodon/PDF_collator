@@ -24,15 +24,15 @@ import shutil
 
 
 # Location for finished, collated reports
-FIN_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Finished'
+FIN_REPORTS = ''
 # Location for reports that have been reviewed, but not collated
-REVD_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Reviewed'
+REVD_REPORTS = ''
 # Location of CoCs
-AUS_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Aus'
-CORP_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Corp'
-PT_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/PT'
+AUS_COCS = ''
+CORP_COCS = ''
+PT_COCS = ''
 # Folder to copy reports into after collation
-BILLINGS = '/Users/grahamleva/src/PDF_collator/functional_tests/Billings'
+BILLINGS = ''
 
 
 def system_checks():
