@@ -340,6 +340,12 @@ class ChainCollection(unittest.TestCase):
         coc = find_coc(self.coc_list, coc_tuple, 'WP123-456apg2.pdf')
         self.assertEqual(coc, os.path.join(PT_COCS.name, 'WP123-456acoc.pdf'))
 
+
+    def test_aggregator_fn(self):
+        self.fail("The test for testing the aggregator function hasn't been written yet.")
+
+    def tearDown(self):
+        # Get rid of all of the populated files
         try:
             for f in os.listdir(AUS_COCS.name):
                 os.remove(os.path.join(AUS_COCS.name, f))
@@ -360,15 +366,36 @@ class ChainCollection(unittest.TestCase):
             print("There was an error removing the temporary directory and "
                   "test .DS_Store file from the SystemCheckTest test suite.")
             print("Error was {0}".format(OSError))
-
         except FileNotFoundError:
             print("There was an error removing the temporary directory!")
 
-    def test_aggregator_fn(self):
-        self.fail("The test for testing the aggregator function hasn't been written yet.")
+
+class SizeCheck(unittest.TestCase):
+    """Test for total_file_size() function.
+    
+    Test data used is pre-generated (so we have consistent file
+    sizes), and is located in the `functional_tests` subdirectory.
+    """
+    def setUp(self):
+        self.test_home = os.getcwd()
+        self.test_file = 'functional_tests/size_test/testfile.txt'
+        self.test_file_path = os.path.join(self.test_home, self.test_file)
+
+        self.list_loc = os.path.join(self.test_home,
+                                     'functional_tests/size_test/list_test')
+        self.test_list = os.listdir(self.list_loc)
+
+        if '.DS_Store' in self.test_list:
+            self.test_list.remove('.DS_Store')
+
+        self.multi_files = [os.path.join(self.list_loc, x) for x in self.test_list]
+
+    def test_file_size(self):
+        """Test the size of a given file"""
+        self.assertEqual(total_file_size(self.test_file_path), 19810)
+        self.assertEqual(total_file_size(self.multi_files), 87655)
 
     def tearDown(self):
-        # Get rid of all of the populated files
         pass
 
 if __name__ == '__main__':

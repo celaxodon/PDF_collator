@@ -93,7 +93,7 @@ To do:
 
 - logging
 - CoC collation - subprocess.Popen()
-  - Handle errors and output DEVNULL
+  - Handle errors and output `subprocess.DEVNULL`)
 
 - Cleanup of files after successful collation
   - How do we know it worked?

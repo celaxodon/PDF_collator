@@ -235,9 +235,13 @@ def strip_chars(directory):
     name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$')
 
     # New operations
-    i = 0
     bad_pdf_names = []
     dirlist = os.listdir(directory)
+
+    if '.DS_Store' in dirlist:
+        dirlist.remove('.DS_Store')
+
+    i = 0
     while i < len(dirlist):
         if dirlist[i].startswith('job'):
             try:
@@ -461,22 +465,6 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
     return missing_coc_list, report_dict
 
 
-def total_file_size(file_list):
-    """Return the size of the files present in a given list of
-    absolute paths to files.
-    """
-
-    total_size = 0
-    # Note that os.path.getsize() is equivalent to instantiating an os.stat
-    # object and calling st_size. Just looks cleaner this way.
-    try:
-        for f in file_list:
-            total_size += os.path.getsize(f)
-    except OSError:
-        print("File {0} could not be found".format(f))
-
-    return total_size
-
 def collate(report_name, dictionary):
     """Function takes in a report name and a dictionary describing the
     report's contents. Reports are collated by using ghostscript, which
@@ -498,7 +486,7 @@ def collate(report_name, dictionary):
     final_report = os.path.join(FIN_REPORTS, report_name)
 
     # Get starting file stats
-    start = total_file_size(gs_list)
+    start_size = total_file_size(gs_list)
     
     # CoC needs to go last in collation
     command = ["gs",
@@ -510,8 +498,50 @@ def collate(report_name, dictionary):
                ", ".join(gs_list)]
 
     # Need to handle stdout and stderr
-    subprocess.Popen(command)
+    subprocess.Popen(command, stdout=subprocess.DEVNULL,
+                     stderr=subprocess.STDOUT)
 
+    end_size = total_file_size(final_report)
+    # How much the collator shrunk the file size
+    reduction_percent = 100 - ((end_size * 100) / start_size)
+
+    return "%3.2s" % reduction_percent + "%"
+
+
+def total_file_size(file_list):
+    """Return the size of a single file or the size of files present in
+    a given list of absolute paths to files.
+
+    Return value is either the size of the file, or files, in bytes, or
+    `False` in the case that the function was passed the wrong file
+    type.
+    """
+
+    total_size = 0
+    # Note that os.path.getsize() is equivalent to instantiating an os.stat
+    # object and calling st_size. Just looks cleaner this way.
+    
+    if isinstance(file_list, str):
+        try:
+            total_size += os.path.getsize(file_list)
+        except OSError:
+            print("File {0} could not be found. Maybe it's not a full path?"
+                  .format(file_list))
+            return False
+
+    elif isinstance(file_list, list):
+        try:
+            for f in file_list:
+                total_size += os.path.getsize(f)
+        except OSError:
+            print("File {0} could not be found. Maybe it's not a full path?"
+                  .format(f))
+            return False
+    else:
+        raise TypeError(type(file_list))
+
+    # Return value is in bytes
+    return total_size
 
 def main():
 
@@ -559,6 +589,7 @@ def main():
     # Collect and analyze PDFs vs. CoCs
     print()
     print("Searching for and matching CoCs...")
+    print()
 
     # Sets used as input to find_coc fn for faster lookups
     A_set = set(os.listdir(AUS_COCS)) # Austin dir
@@ -573,6 +604,7 @@ def main():
     coc_tuple = (A_set, C_set, P_set)
 
     pdf_stack = good_pdf_names[:]
+    pdf_stack.sort()   # NECESSARY
     # The list of all pdfs for which no CoC could be found
     missing_coc_list = []
     missing_coc_list, report_dict = aggregator(coc_list, coc_tuple,
@@ -587,7 +619,7 @@ def main():
               "again.\n")
         print("--------------------")
         for num in missing_coc_list:
-            print(' * ', missing_coc_list)
+            print(' * ', num)
         print("--------------------")
         ans = input("Do you want to continue with other reports? (y/n)\n")
         while True:
@@ -599,18 +631,23 @@ def main():
             else:
                 print("Yes ('y') or no ('n'), please.")
                 ans = input("Continue program? (y/n)\n")
+    # Create reports
     else:
+        print("------------------------------------")
+        print("Report Name                Reduction")
+        print("------------------------------------")
         for report_name in list(report_dict.keys()):
             #unpack dictionary
             dictionary = report_dict.pop(report_name)
-            collate(report_name, dictionary)
-            # Move files to user's trash
+            reduction = collate(report_name, dictionary)
+            # Report size difference (compression)
+            print("{0:<30} {1:.2f}".format(report_name, reduction))
 
     # Copy final report to "BILLINGS"
     for item in os.listdir(FIN_REPORTS):
         shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
 
-    # Report size difference (compression)
+    # Move files to user's trash
 
 if __name__ == '__main__':
     main()
