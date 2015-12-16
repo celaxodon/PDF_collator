@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
-#-----------------------------------------#
-#            PDF Collator v.01            #
-#          Written by Graham Leva         #
-#     Copyright (c) 2015 AnalySys, Inc.   #
-#    Something about the proper license   #
-#-----------------------------------------#
+#-------------------------------#
+#       PDF Collator v.01       #
+#-------------------------------#
 
+# Handles the following chain of custody formats:
 #    Standard coc filename --> 123456coc.pdf
 #    Multi-PDF coc filename --> 123450-456coc.pdf
 #    Single rerun coc filename --> 123456acoc.pdf
@@ -33,6 +32,16 @@ CORP_COCS = ''
 PT_COCS = ''
 # Folder to copy reports into after collation
 BILLINGS = ''
+
+__author__ = "Graham Leva"
+__copyright__ = "2015, AnalySys, Inc."
+
+__version__ = "0.1"
+__license__ = ""
+__maintainer__ = ""
+__email__ = "gleva@analysysinc.com"
+__status__ = "Development"
+
 
 
 def system_checks():
@@ -584,8 +593,7 @@ def main():
         while True:
             lower_ans = str(ans).lower()
             if lower_ans == 'y' or lower_ans == 'yes':
-                # Continue with checks
-                break
+                break     # Continue with checks
             elif lower_ans == 'n' or lower_ans == 'no':
                 sys.exit(0)
             else:
