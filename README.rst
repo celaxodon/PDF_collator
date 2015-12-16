@@ -148,12 +148,10 @@ or
 
   `gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$FILENAME" ./*.pdf 2>/dev/null;`
 
-  - `-dBATCH` -- Exit after last file, rather than going into an interactive
-    reading postscript commands.
-
-  - `-dNOPAUSE` -- No pause after page.
-
   - `-o` -- Implies `-dBATCH` and `-dNOPAUSE`.
+    - `-dBATCH` -- Exit after last file, rather than going into an interactive
+        reading postscript commands.
+    - `-dNOPAUSE` -- No pause after page.
 
   - `-q` -- Quiet mode; suppress messages.
 
@@ -213,3 +211,30 @@ Considerations:
     B. Look to COCs, generate ranges they encompass, match with PDFs. Do it
         with dictionaries. Delete any keys that don't have PDFs associated.
         This method could use sets for quick membership checking
+
+The Algorithm
+-------------
+
+This part is the tricky part. Python is high enough level that we don't have to
+(get to?) mess with implementing the structures themselves, but the way we pass
+data around is getting convoluted, particularly in the `aggregator()` function.
+
+It makes far more sense to reference PDFs, and then look for CoCs, rather than
+the other way around. Less CoCs to iterate through! The other method would have
+us generating lists of numbers for each chain, and there are far too many chains
+to have that go quickly. 
+
+So, if we proceed from the PDFs (all data has been validated by this point), we
+search for chains for each PDF. But necessarily, we will get lots of repeat hits
+on certain Chains, since a chain may contain a range of pdfs that are *supposed*
+to be in our pdf stack. So clearly, iterating through the pdf stack isn't
+efficient. Using it as a stack *is* though, since we can back-check the coc
+ranges in the titles, and find all other numbers we should have. Then, we clear
+the stack of the ones that are included by the chain, then repeat the operation
+until the stack is empty.
+
+1. get coc and full path by using a list of all cocs, a tuple of sets of cocs
+   by location (so we can figure out where it is), and the single pdf from our
+   stack. 
+   A. If no coc is found, we remove the pdf from the stack and add it to the
+   return value
