@@ -148,10 +148,9 @@ or
 
   `gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -dAutoRotatePages=/PageByPage -sOutputFile="$FILENAME" ./*.pdf 2>/dev/null;`
 
-  - `-o` -- Implies `-dBATCH` and `-dNOPAUSE`.
-    - `-dBATCH` -- Exit after last file, rather than going into an interactive
-        reading postscript commands.
-    - `-dNOPAUSE` -- No pause after page.
+  - `-dBATCH` -- Exit after last file, rather than going into an interactive
+    reading postscript commands.
+  - `-dNOPAUSE` -- No pause after page.
 
   - `-q` -- Quiet mode; suppress messages.
 
@@ -161,6 +160,7 @@ or
   - `-dAutoRotatePages=/PageByPage` --
 
   - `-sOutputFile=$FILENAME` -- Designate a file name to write to
+    - `-o` is now a shorthand for this, I think
 
 The following options are experimental and compression-related:
 
