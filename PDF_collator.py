@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-#-------------------------------#
-#       PDF Collator v.01       #
-#-------------------------------#
+#---------------------------#
+#       PDF Collator        #
+#---------------------------#
 
 # Handles the following chain of custody formats:
 #    Standard coc filename --> 123456coc.pdf
@@ -36,9 +36,11 @@ BILLINGS = ''
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
 
-__version__ = "0.1"
+__version__ = "0.01"
+__contributors__ = ['Kristine Passalcqua', 'Kimberly Rotge', 'Shawna Biggs',
+                    'Michael Leva']
 __license__ = ""
-__maintainer__ = ""
+__maintainer__ = "Graham Leva"
 __email__ = "gleva@analysysinc.com"
 __status__ = "Development"
 
@@ -476,38 +478,37 @@ def collate(report_name, dictionary):
         'missing_pdfs' - either `None` or a list of missing PDFs that were
         not found during the back-check.
     """
-    # Check for missing PDFs (from back check) and get user's permission
-    # to continue.
-
     # Generate full paths to reviewed and stripped reports
     gs_list = [os.path.join(REVD_REPORTS, x) for x in dictionary['pdfs']]
+    # Less efficient to add the COC here, rather than in the command arguments,
+    # but we need a data structure with all PDFs to test file size
     gs_list.append(dictionary['coc'])  # COC goes last in the report
 
-    # If name is too long, try os.chdir to FIN_REPORTS before
-    # running this fn... if it deposits the reports in CWD.
     final_report = os.path.join(FIN_REPORTS, report_name)
 
     # Get starting file stats
     start_size = total_file_size(gs_list)
     
     command = ["gs",
-               "-o",
-               "-q",
+               "-q", # Quiet mode
+               "-dBATCH",
+               "-dNOPAUSE",
                "-sDEVICE=pdfwrite",
                "-dAutoRotatePages=/PageByPage",
-               "-sOutputFile=%s" % final_report,
-               ", ".join(gs_list)]
+               "-sOutputFile=%s" % final_report] # Also works with -o flag
 
-    # Need to handle stdout and stderr
-    subprocess.Popen(command, stdout=subprocess.DEVNULL,
-                     stderr=subprocess.STDOUT)
+    # Append each input file -- REQUIRED. Cannot use " ".join(gs_list).
+    for i in gs_list:
+        command.append(i)
+
+    subprocess.Popen(command, stderr=subprocess.STDOUT)
 
     end_size = total_file_size(final_report)
     # How much the collator shrunk the file size
     reduction_percent = 100 - ((end_size * 100) / start_size)
 
-     # type of reduction_percent?
-    return "%3.2s" % reduction_percent + "%"
+    # Return the percent reduced
+    return reduction_percent
 
 
 def total_file_size(file_list):
@@ -641,13 +642,48 @@ def main():
         for report_name in list(report_dict.keys()):
             #unpack dictionary
             dictionary = report_dict.pop(report_name)
-            reduction = collate(report_name, dictionary)
+
+            # Handle missing PDFs from the back check
+            if dictionary['missing_pdfs'] is not None:
+                print("Report {0} indicates a range of PDFs that were not found"
+                      " in the folder for reviewed reports.\n"
+                      " The missing PDFs are:")
+                for i in dictionary['missing_pdfs']:
+                    print("\t{0}".format(i))
+
+                print()
+                response = input("Skip this report (y/n)?")
+                while True:
+                    lower_response = str(response).lower()
+                    if lower_response == 'y' or lower_response == 'yes':
+                        reduction = "Skipped"
+                        break
+                    elif lower_response == 'n' or lower_response == 'no':
+                        reduction = collate(report_name, dictionary)
+                        break
+                    else:
+                        print("Yes ('y') or no ('n'), please.")
+                        ans = input("Continue program? (y/n)\n")
+            else:
+                reduction = collate(report_name, dictionary)
+
             # Report size difference (compression)
-            print("{0:<30} {1:.2f}".format(report_name, reduction))
+            if isinstance(reduction, str):
+                # `reduction` will be "Skipped"
+                print("{0:<30} {1}".format(report_name, reduction))
+            elif isinstance(reduction, float):
+                print("{0:<30} {1:.2f}%".format(report_name, reduction))
+            else:
+                print("{0:<30} {1}%".format(report_name, reduction))
 
     # Copy final report to "BILLINGS"
     for item in os.listdir(FIN_REPORTS):
-        shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
+        # If already there?
+        try:
+            shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
+        except SameFileError:
+            print("Report {0} already exists in the Billings folder."
+                  " Not copying.".format(item))
 
     # Move files to user's trash
 
