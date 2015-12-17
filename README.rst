@@ -51,6 +51,16 @@ As of June, 2015, the script has been designed to do the following:
 * Disposes of files after successful collation (User's Trash), and moves reports to
   a specified location.
 
+Limitations
+-----------
+
+Due to the automated, numerical nature of the reverse check, the program cannot
+account for missing PDFs if there are multiple pages but one is missing; it can
+only account for numbers it knows *should* exist, but cannot find. For example,
+if 557000pg1.pdf is present, but 557000pg2.pdf is missing, the program has no
+way to determining a file is missing. Similarly, WP/SP/QC reports have multiple
+pages, but the reverse check is not aware, and has no way of determining how
+many pages per number exist.
 
 Variables
 ---------
