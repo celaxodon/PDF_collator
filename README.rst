@@ -18,16 +18,28 @@ As of June, 2015, the script has been designed to do the following:
 
 * Checks that necessary remote filesystems have been mounted.
 
-* Checks that the full range of files, as indicated by the COC naming scheme.
-  If the full range is not found, a warning is given to the user, but proceeds
-  with the collation anyway
+* Validates file names for coc and pdf report files.
+
+  Valid Chain of Custody names are as follows:
+  * '123456coc.pdf'
+  * '123456acoc.pdf' ("a" can be swapped for "b", "c", or "d")
+  * '123456-460coc.pdf'
+  * '123456a-460acoc.pdf'
+  * 'QC123-456coc.pdf' ("QC" can be swapped for "WP" or "SP")
+
+  Valid PDF report names are as follows:
+  * '123456pg1.pdf' (pg1 can go as high as pg9)
+  * 'WP123-456pg1.pdf' (as above, "WP" can be swapped for "QC or "SP")
+
+* Strips automatically generated prefixes from files ("job_#### "), where
+  "#" can be any number from 1 to 10000.
 
 * Searches for and collects Chain of Custody (COC) PDFs, which
-  will match numerically with various LIMS-produced PDFs.
+  should match with various LIMS-produced PDFs.
 
-* Performs some error checking (by regex) on COC and PDF files.
-
-* Creates temporarary directories, reorders COC PDFs and report files first.
+* Reverse matches forthe full range of PDFs, as indicated by the COC naming
+  scheme. If the full range is not found, a warning is given to the user, but
+  the user has the option of proceeding with the collation anyway.
 
 * Uses Ghostscript to collate reports and reduce their final size.
 
@@ -36,12 +48,9 @@ As of June, 2015, the script has been designed to do the following:
   than Adobe's software. Testing of additional gs options below is needed to
   enhance compression. 
 
-* Disposes of files after successful collation, and moves reports to
-  appropriate location.
+* Disposes of files after successful collation (User's Trash), and moves reports to
+  a specified location.
 
-* Has a reset function to clean up the temporary directory files. This will
-  return files to their original location, based on filename. Only needs to 
-  be used in the event that COC files are improperly named. 
 
 Variables
 ---------
