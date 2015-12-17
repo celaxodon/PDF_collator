@@ -479,16 +479,17 @@ def collate(report_name, dictionary):
     # Check for missing PDFs (from back check) and get user's permission
     # to continue.
 
-    # Construct list of input of absolute file names
+    # Generate full paths to reviewed and stripped reports
     gs_list = [os.path.join(REVD_REPORTS, x) for x in dictionary['pdfs']]
-    gs_list.append(dictionary['coc'])
+    gs_list.append(dictionary['coc'])  # COC goes last in the report
 
+    # If name is too long, try os.chdir to FIN_REPORTS before
+    # running this fn... if it deposits the reports in CWD.
     final_report = os.path.join(FIN_REPORTS, report_name)
 
     # Get starting file stats
     start_size = total_file_size(gs_list)
     
-    # CoC needs to go last in collation
     command = ["gs",
                "-o",
                "-q",
@@ -505,6 +506,7 @@ def collate(report_name, dictionary):
     # How much the collator shrunk the file size
     reduction_percent = 100 - ((end_size * 100) / start_size)
 
+     # type of reduction_percent?
     return "%3.2s" % reduction_percent + "%"
 
 
