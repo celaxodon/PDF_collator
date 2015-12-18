@@ -20,8 +20,6 @@ import logging
 import re
 import argparse
 import shutil
-import pdb
-
 
 # Location for finished, collated reports
 FIN_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Complete'
@@ -476,6 +474,10 @@ def collate(report_name, dictionary):
         'pdfs' - A list of PDFs to be used from REVD_REPORTS directory.
         'missing_pdfs' - either `None` or a list of missing PDFs that were
         not found during the back-check.
+
+    Returns variable `start_size`, which is an integer representing the
+    number of bytes all input files contain for later comparison to the
+    final report size.
     """
     # Generate full paths to reviewed and stripped reports
     gs_list = [os.path.join(REVD_REPORTS, x) for x in dictionary['pdfs']]
@@ -500,17 +502,11 @@ def collate(report_name, dictionary):
     for i in gs_list:
         command.append(i)
 
-    subprocess.Popen(command, stderr=subprocess.DEVNULL)
+    # Without .wait(), cleanup operations move the files before
+    # gs has the chance to operate on the files.
+    subprocess.Popen(command, stderr=subprocess.DEVNULL).wait()
 
-    end_size = total_file_size(final_report)
-    # How much the collator shrunk the file size
-    while end_size:
-        reduction_percent = 100 - ((end_size * 100) / start_size)
-        return reduction_percent
-    return 
-
-    # Return the percent reduced
-    return reduction_percent
+    return start_size
 
 
 def total_file_size(file_list):
@@ -526,9 +522,13 @@ def total_file_size(file_list):
     # Note that os.path.getsize() is equivalent to instantiating an os.stat
     # object and calling st_size. Just looks cleaner this way.
     
+    # Check for type -- str (single file) or list (list of files)
     if isinstance(file_list, str):
         try:
-            total_size = os.path.getsize(file_list)
+            if os.path.exists(file_list):
+                total_size = os.path.getsize(file_list)
+            else:
+                return False
         except OSError:
             print("File {0} could not be found. Maybe it's not a full path?"
                   .format(file_list))
@@ -537,16 +537,27 @@ def total_file_size(file_list):
     elif isinstance(file_list, list):
         try:
             for f in file_list:
-                total_size += os.path.getsize(f)
+                if os.path.exists(f):
+                    total_size += os.path.getsize(f)
+                else:
+                    return False
         except OSError:
             print("File {0} could not be found. Maybe it's not a full path?"
                   .format(f))
             return False
     else:
         raise TypeError(type(file_list))
-
-    # Return value is in bytes
+    # Return size of file(s) in bytes
     return total_size
+
+def humanize_size(size):
+    """Takes in an integer representing file size and converts to
+    MiB/KiB as needed."""
+
+    for unit in ['B', 'KiB', 'MiB', 'GiB']:
+        if size < 1024.0:
+            return "%3.1f%s" % (size, unit)
+        size /= 1024.0
 
 def main():
 
@@ -632,65 +643,88 @@ def main():
         for num in missing_coc_list:
             print(' * ', num)
         print("---------------------")
-        ans = input("Do you want to continue with other reports (y/n)?\n")
-        while True:
-            lower_ans = str(ans).lower()
-            if lower_ans == 'y' or lower_ans == 'yes':
-                break     # Continue with checks
-            elif lower_ans == 'n' or lower_ans == 'no':
-                sys.exit(0)
-            else:
-                print("Yes ('y') or no ('n'), please.")
-                ans = input("Continue with other reports (y/n)?\n")
+        # Commented out -- flow control is off. 'break' causes errors...
+#        ans = input("Do you want to continue with other reports (y/n)?\n")
+#        while True:
+#            lower_ans = str(ans).lower()
+#            if lower_ans == 'y' or lower_ans == 'yes':
+#
+#                break     # Continue with checks
+#            # GOTO?
+#            elif lower_ans == 'n' or lower_ans == 'no':
+#                sys.exit(0)
+#            else:
+#                print("Yes ('y') or no ('n'), please.")
+#                ans = input("Continue with other reports (y/n)?\n")
+    #pdb.set_trace()
     # Create reports
-    else:
-        print("------------------------------------")
-        print("Report Name                 Reduced")
-        print("------------------------------------")
-        for report_name in list(report_dict.keys()):
-            #unpack dictionary
-            dictionary = report_dict.pop(report_name)
+    report_stats = []
+    for report_name in list(report_dict.keys()):
+        #unpack dictionary
+        dictionary = report_dict.pop(report_name)
 
-            # Handle missing PDFs from the back check
-            if dictionary['missing_pdfs'] is not None:
-                print("Report {0} indicates a range of PDFs that were not found"
-                      " in the folder for reviewed reports.\n\n"
-                      "The missing PDFs are:".format(report_name))
-                for i in dictionary['missing_pdfs']:
-                    print("\t{0}".format(i))
+        # Handle missing PDFs from the back check
+        if dictionary['missing_pdfs']:
+            print("Report {0} indicates a range of PDFs that were not found"
+                    " in the folder for reviewed reports.\n\n"
+                    "The missing PDFs are:".format(report_name))
+            for i in dictionary['missing_pdfs']:
+                print("\t{0}".format(i))
 
-                print()
-                response = input("Skip this report (y/n)?\n")
-                while True:
-                    lower_response = str(response).lower()
-                    if lower_response == 'y' or lower_response == 'yes':
-                        reduction = "Skipped"
-                        break
-                    elif lower_response == 'n' or lower_response == 'no':
-                        reduction = collate(report_name, dictionary)
-                        break
-                    else:
-                        print("Yes ('y') or no ('n'), please.")
-                        ans = input("Skip this report (y/n)?\n")
-            else:
-                reduction = collate(report_name, dictionary)
+            print()
+            response = input("Skip this report (y/n)?\n")
+            while True:
+                lower_response = str(response).lower()
+                if lower_response == 'y' or lower_response == 'yes':
+                    stats = [report_name, "Skipped"]
+                    report_stats.append(stats)
+                    break
+                elif lower_response == 'n' or lower_response == 'no':
+                    size = collate(report_name, dictionary)
+                    stats = [report_name, size]
+                    report_stats.append(stats)
+                    break
+                else:
+                    print("Yes ('y') or no ('n'), please.")
+                    ans = input("Skip this report (y/n)?\n")
+        else:
+            size = collate(report_name, dictionary)
+            stats = [report_name, size]
+            report_stats.append(stats)
 
-            # Report size difference (compression)
-            if isinstance(reduction, str):
-                # `reduction` will be "Skipped"
-                print("{0:<28} {1}".format(report_name, reduction))
-            elif isinstance(reduction, float):
-                print("{0:<28} {1:.2f}%".format(report_name, reduction))
-            else:
-                print("{0:<28} {1}%".format(report_name, reduction))
-            # Move files to user's trash
-            # Get user's home directory
-            # 
-            #for f in dictionary['pdfs']:
-            #    shutil.move(os.path.join(REVD_REPORTS, f), os.path.expanduser('~/.Trash'))
-            #shutil.move(dictionary['coc'], os.path.expanduser('~/.Trash'))
+        # Move PDF then COC files to user's trash
+        for f in dictionary['pdfs']:
+            try:
+                shutil.copy2(os.path.join(REVD_REPORTS, f),
+                             os.path.expanduser('~/.Trash'))
+                os.remove(os.path.join(REVD_REPORTS, f))
+            except OSError:
+                os.remove(os.path.join(REVD_REPORTS, f))
 
-            # Copy final report to "BILLINGS"
+        try:
+            shutil.copy2(dictionary['coc'], os.path.expanduser('~/.Trash'))
+            os.remove(os.path.join(REVD_REPORTS, dictionary['coc']))
+        except OSError:
+            os.remove(os.path.join(REVD_REPORTS, dictionary['coc']))
+
+    # Generate report
+    print("--------------------------------------------------------")
+    print("Report Name               File size             Reduced")
+    print("--------------------------------------------------------")
+    # report_stats = [<report name>, <start size>]
+    for j in report_stats:
+        if j[1] == "Skipped":
+            print("{0:<26} {1:15} {2:>12}".format(j[0], j[1], j[1]))
+        else:
+            r = os.path.join(FIN_REPORTS, j[0])
+            end_size = total_file_size(r)
+            human_size = humanize_size(end_size)
+            reduction = 100 - ((end_size * 100) / j[1])
+            print("{0:<26} {1:<15} {2:>11.2f}%".format(j[0], human_size,
+                                                        reduction))
+
+
+    # Copy reports to billings directory
     for item in os.listdir(FIN_REPORTS):
         try:
             shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
