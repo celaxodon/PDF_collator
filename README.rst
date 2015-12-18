@@ -8,7 +8,7 @@ to augment the lack of PDF collating and printing in a Laboratory Information
 Management System (LIMS), the script gradually grew too far and fast to
 be easily maintained as a shell script. 
 
-This Python rewrite is intended to make the code easier to maintain and
+The Python rewrite is intended to make the code easier to maintain and
 understand, and to improve the performance and error handling.
 
 Features
@@ -37,19 +37,28 @@ As of June, 2015, the script has been designed to do the following:
 * Searches for and collects Chain of Custody (COC) PDFs, which
   should match with various LIMS-produced PDFs.
 
-* Reverse matches forthe full range of PDFs, as indicated by the COC naming
+* Reverse matches for the full range of PDFs, as indicated by the COC naming
   scheme. If the full range is not found, a warning is given to the user, but
   the user has the option of proceeding with the collation anyway.
 
-* Uses Ghostscript to collate reports and reduce their final size.
-
-  **Note**: This needs to be revisited. In testing, ghostscript was more efficient
-  at reducing overall PDF file size than pypdf2, but slightly less efficient 
-  than Adobe's software. Testing of additional gs options below is needed to
-  enhance compression. 
+* Uses Ghostscript to collate and compress reports.
 
 * Disposes of files after successful collation (User's Trash), and moves reports to
   a specified location.
+
+Design Notes
+------------
+
+Ghostscript was chosen as an alternative to the previous solution, which used
+an Apple script. The apple script, part of Apple's automator software, used 
+pypdf2 and was inefficient at reducing PDF size. Ghostscript also holds the 
+advantage of being able to rotate PDFs automatically. 
+
+For referring to the Applescript Automator's PDF script, see
+`/System/Library/Automator/Combine PDF Pages.action/Contents/Resources/join.py`
+
+At times, using this script caused collated PDFs to *balloon* in size instead
+of shrink. 
 
 Limitations
 -----------
@@ -73,7 +82,7 @@ GLOBAL VARIABLES:
   * `AUS_COCS`     - Directory where Chain of Custodies from Austin are kept.
   * `CORP_COCS`    - Directory where Chain of Custodies from Corpus are kept.
   * `PT_COCS`      - Directory where PT sample chains are kept.
-  * `BILLINGS`     - Directory where _copies_ of completed reports should be
+  * `BILLINGS`     - Directory where *copies* of completed reports should be
                      delivered to. Reports in this directory act as a signal
                      to the billings department telling them to go ahead and
                      bill for the work.
@@ -107,48 +116,8 @@ Return values and other variables:
                         'pdfs': ['1.pdf', '2.pdf', ...],
                         'missing_pdfs' = ['3.pdf', ...]}
 
-To do:
-------
-
-- logging
-- CoC collation - subprocess.Popen()
-  - Handle errors and output `subprocess.DEVNULL`)
-
-- Cleanup of files after successful collation
-  - How do we know it worked?
-  - Move target files to the trash
-
-- Compression stats
-  - Function should take a file and return its size (KB/MB/GB) -- both of the
-    below return size in bytes
-  - os.path.getsize() -- uses os.stat
-  - os.stat way -- instatiate, then call st_size attribute
-
-- Concatenation/compression options:
-  - Use a subprocess (std lib) - see: http://stackoverflow.com/questions/27631940/python-script-to-compress-all-pdf-files-in-a-directory-on-windows-7
-  - Use a system call to `gs` (std lib)
-
-- Testing
-    - Collation
-
-
-Design Notes
-------------
-
-Ghostscript was chosen as an alternative to the previous solution, which used
-an Apple script. The apple script, part of Apple's automator software, used 
-pypdf2 and was inefficient at reducing PDF size. Ghostscript also holds the 
-advantage of being able to rotate PDFs automatically. 
-
-For refering to the Applescript Automator's PDF script, see
-`/System/Library/Automator/Combine PDF Pages.action/Contents/Resources/join.py`
-
-At times, using this script caused collated PDFs to _balloon_ in size instead
-of shrink. 
-
-
-**_Ghostscript usage_**
------------------------
+Ghostscript usage
+-----------------
 
 Ghostscript is fast and accurate, but doesn't take input well. 
 Both piping input into GS and an array with PDF titles were attempted, 
@@ -170,18 +139,14 @@ or
   - `-dBATCH` -- Exit after last file, rather than going into an interactive
     reading postscript commands.
   - `-dNOPAUSE` -- No pause after page.
-
   - `-q` -- Quiet mode; suppress messages.
-
   - `-sDEVICE=pdfwrite` -- Selects the output device ghostscript should use.
     Here, the output device is a pdfwriter.
-
   - `-dAutoRotatePages=/PageByPage` --
-
   - `-sOutputFile=$FILENAME` -- Designate a file name to write to
     - `-o` is now a shorthand for this, I think
 
-The following options are experimental and compression-related:
+The following options are compression-related, but haven't been tested yet:
 
   - `-dEmbedAllFonts=true` -- Ensures that the fonts you used in creating
     the pdf are used by whomever views the pdf. A full copy of the entire
@@ -208,36 +173,22 @@ Usage
 Chain of Custody files. Final reports are filed for both billing and delivery
 to clients. 
 
-OPTIONS:
-  `-h`, `--help` -- Prints the usage guide
+Options still need to be written in code and in the docs. No cleanup is
+needed anymore -- got rid of hidden and temporary folders from the bash
+version.
 
-  `-r`, `--reset` -- Resets pdfs and their associated Chain of Custody (CoC)
-  files to the appropriate places in the file system. 
+To do:
+------
 
+- Logging
 
-Thoughts on thee Algorithm
---------------------------
+- Cleanup of files after successful collation
+  - How do we know it worked?
+  - Move target files to the trash
 
-This part is the tricky part. Python is high enough level that we don't have to
-(get to?) mess with implementing the structures themselves, but the way we pass
-data around is getting convoluted, particularly in the `aggregator()` function.
+- Compression stats and report generation at end
+  - Function should take a file and return its size (KB/MB/GB) -- both of the
+    below return size in bytes
 
-It makes far more sense to reference PDFs, and then look for CoCs, rather than
-the other way around. Less CoCs to iterate through! The other method would have
-us generating lists of numbers for each chain, and there are far too many chains
-to have that go quickly. 
-
-So, if we proceed from the PDFs (all data has been validated by this point), we
-search for chains for each PDF. But necessarily, we will get lots of repeat hits
-on certain Chains, since a chain may contain a range of pdfs that are *supposed*
-to be in our pdf stack. So clearly, iterating through the pdf stack isn't
-efficient. Using it as a stack *is* though, since we can back-check the coc
-ranges in the titles, and find all other numbers we should have. Then, we clear
-the stack of the ones that are included by the chain, then repeat the operation
-until the stack is empty.
-
-1. get coc and full path by using a list of all cocs, a tuple of sets of cocs
-   by location (so we can figure out where it is), and the single pdf from our
-   stack. 
-   A. If no coc is found, we remove the pdf from the stack and add it to the
-   return value
+- Testing
+    - Fix tests (some fail due to temporary folder mechanics)

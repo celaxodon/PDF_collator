@@ -20,18 +20,19 @@ import logging
 import re
 import argparse
 import shutil
+import pdb
 
 
 # Location for finished, collated reports
-FIN_REPORTS = ''
+FIN_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Complete'
 # Location for reports that have been reviewed, but not collated
-REVD_REPORTS = ''
+REVD_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Reviewed'
 # Location of CoCs
-AUS_COCS = ''
-CORP_COCS = ''
-PT_COCS = ''
+AUS_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Aus'
+CORP_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Corp'
+PT_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/PT'
 # Folder to copy reports into after collation
-BILLINGS = ''
+BILLINGS = '/Users/grahamleva/src/PDF_collator/functional_tests/Billings'
 
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
@@ -43,7 +44,6 @@ __license__ = ""
 __maintainer__ = "Graham Leva"
 __email__ = "gleva@analysysinc.com"
 __status__ = "Development"
-
 
 
 def system_checks():
@@ -234,7 +234,7 @@ def strip_chars(directory):
           list of bad file names if any were found.
     """
     prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
-    name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$')
+    name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$|(QC|WP|SP)([\\d]{3})-([\\d]{3})pg[1-9]{1}\\.pdf$')
 
     # New operations
     bad_pdf_names = []
@@ -305,6 +305,8 @@ def find_coc(coc_list, coc_tuple, pdf_name):
             # PT CoC dir
             else:
                 return os.path.join(PT_COCS, i)
+        else:
+            continue
     # No CoC found
     return None
 
@@ -424,19 +426,15 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
         - when a pdf cannot be matched to a CoC, and
         - when a series of pdfs match to a given coc range (back-checking)
     """
-    
-
-    stack_copy = pdf_stack[:]
-    i = 0
     while pdf_stack != []:
 
-        coc = find_coc(coc_list, coc_tuple, pdf_stack[i])
+        coc = find_coc(coc_list, coc_tuple, pdf_stack[0])
 
         # CoC not found?
         if coc is None:
             # Remove PDF from stack and add to list of PDFs whose CoCs
             # could not be found. Effectively ignores these PDFs.
-            missing_coc_list.append(pdf_stack.pop(i))
+            missing_coc_list.append(pdf_stack.pop(0))
             # Recursively call function on reduced pdf_stack.
             aggregator(coc_list, coc_tuple, missing_coc_list,
                        pdf_stack, report_dict)
@@ -447,6 +445,7 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
 
             # Create list of file names (not just nums) for PDFs that match to CoCs
             # and remove from pdf_stack.
+            # May be room for efficiency gains here
             matched_pdfs = []
             for j in required_pdfs:
                 for k in pdf_stack:
@@ -501,11 +500,14 @@ def collate(report_name, dictionary):
     for i in gs_list:
         command.append(i)
 
-    subprocess.Popen(command, stderr=subprocess.STDOUT)
+    subprocess.Popen(command, stderr=subprocess.DEVNULL)
 
     end_size = total_file_size(final_report)
     # How much the collator shrunk the file size
-    reduction_percent = 100 - ((end_size * 100) / start_size)
+    while end_size:
+        reduction_percent = 100 - ((end_size * 100) / start_size)
+        return reduction_percent
+    return 
 
     # Return the percent reduced
     return reduction_percent
@@ -526,7 +528,7 @@ def total_file_size(file_list):
     
     if isinstance(file_list, str):
         try:
-            total_size += os.path.getsize(file_list)
+            total_size = os.path.getsize(file_list)
         except OSError:
             print("File {0} could not be found. Maybe it's not a full path?"
                   .format(file_list))
@@ -565,9 +567,10 @@ def main():
 
     # Check CoC file names
     print()
-    print("Analyzing CoC names...")
-    bad_names, coc_list = name_check(AUS_COCS, CORP_COCS)
+    print("Analyzing CoC names...", end=" ")
+    bad_names, coc_list = name_check(AUS_COCS, CORP_COCS, PT_COCS)
     if bad_names:
+        print()
         print("The following CoCs have been improperly named. Please correct "
               "the file names before running this program again.")
         print("--------------------")
@@ -575,12 +578,15 @@ def main():
             print(" * ", name)
         print("--------------------")
         sys.exit(1)
+    else:
+        print("All pass.")
 
     # Get rid of job_#### prefixes and check namings
     print()
-    print("Analyzing and fixing PDF names...")
+    print("Analyzing and fixing PDF names...", end=" ")
     good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
     if bad_pdf_names:
+        print()
         print("An error has occurred when stripping file names!")
         print("The following PDFs do not match the correct naming scheme "
               "and will be ignored:")
@@ -588,6 +594,8 @@ def main():
         for name in bad_pdf_names:
             print(" * ", name)
         print("--------------------")
+    else:
+        print("All pass.")
 
     # Collect and analyze PDFs vs. CoCs
     print()
@@ -595,11 +603,11 @@ def main():
     print()
 
     # Sets used as input to find_coc fn for faster lookups
-    A_set = set(os.listdir(AUS_COCS)) # Austin dir
+    A_set = set(os.listdir(AUS_COCS))
     A_set.discard('.DS_Store')
-    C_set = set(os.listdir(CORP_COCS)) # Corpus dir
+    C_set = set(os.listdir(CORP_COCS))
     C_set.discard('.DS_Store')
-    P_set = set(os.listdir(PT_COCS)) # dir for PT (QC/WP/SP) samples
+    P_set = set(os.listdir(PT_COCS))
     P_set.discard('.DS_Store')
 
     # coc_list and coc_tuple are being used outside of its local namespace.
@@ -620,11 +628,11 @@ def main():
               " ignored.")
         print("Please check that the CoCs exist before running this program "
               "again.\n")
-        print("--------------------")
+        print("---------------------")
         for num in missing_coc_list:
             print(' * ', num)
-        print("--------------------")
-        ans = input("Do you want to continue with other reports? (y/n)\n")
+        print("---------------------")
+        ans = input("Do you want to continue with other reports (y/n)?\n")
         while True:
             lower_ans = str(ans).lower()
             if lower_ans == 'y' or lower_ans == 'yes':
@@ -633,11 +641,11 @@ def main():
                 sys.exit(0)
             else:
                 print("Yes ('y') or no ('n'), please.")
-                ans = input("Continue program? (y/n)\n")
+                ans = input("Continue with other reports (y/n)?\n")
     # Create reports
     else:
         print("------------------------------------")
-        print("Report Name                Reduction")
+        print("Report Name                 Reduced")
         print("------------------------------------")
         for report_name in list(report_dict.keys()):
             #unpack dictionary
@@ -646,13 +654,13 @@ def main():
             # Handle missing PDFs from the back check
             if dictionary['missing_pdfs'] is not None:
                 print("Report {0} indicates a range of PDFs that were not found"
-                      " in the folder for reviewed reports.\n"
-                      " The missing PDFs are:")
+                      " in the folder for reviewed reports.\n\n"
+                      "The missing PDFs are:".format(report_name))
                 for i in dictionary['missing_pdfs']:
                     print("\t{0}".format(i))
 
                 print()
-                response = input("Skip this report (y/n)?")
+                response = input("Skip this report (y/n)?\n")
                 while True:
                     lower_response = str(response).lower()
                     if lower_response == 'y' or lower_response == 'yes':
@@ -663,29 +671,33 @@ def main():
                         break
                     else:
                         print("Yes ('y') or no ('n'), please.")
-                        ans = input("Continue program? (y/n)\n")
+                        ans = input("Skip this report (y/n)?\n")
             else:
                 reduction = collate(report_name, dictionary)
 
             # Report size difference (compression)
             if isinstance(reduction, str):
                 # `reduction` will be "Skipped"
-                print("{0:<30} {1}".format(report_name, reduction))
+                print("{0:<28} {1}".format(report_name, reduction))
             elif isinstance(reduction, float):
-                print("{0:<30} {1:.2f}%".format(report_name, reduction))
+                print("{0:<28} {1:.2f}%".format(report_name, reduction))
             else:
-                print("{0:<30} {1}%".format(report_name, reduction))
+                print("{0:<28} {1}%".format(report_name, reduction))
+            # Move files to user's trash
+            # Get user's home directory
+            # 
+            #for f in dictionary['pdfs']:
+            #    shutil.move(os.path.join(REVD_REPORTS, f), os.path.expanduser('~/.Trash'))
+            #shutil.move(dictionary['coc'], os.path.expanduser('~/.Trash'))
 
-    # Copy final report to "BILLINGS"
+            # Copy final report to "BILLINGS"
     for item in os.listdir(FIN_REPORTS):
-        # If already there?
         try:
             shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
         except SameFileError:
             print("Report {0} already exists in the Billings folder."
                   " Not copying.".format(item))
 
-    # Move files to user's trash
 
 if __name__ == '__main__':
     main()
