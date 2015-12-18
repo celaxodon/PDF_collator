@@ -6,7 +6,7 @@ import os.path
 from tempfile import TemporaryDirectory, TemporaryFile
 
 from PDF_collator import system_checks, file_check, name_check, strip_chars,\
-     get_ranges, total_file_size, find_coc, backcheck, aggregator
+     get_ranges, total_file_size, find_coc, backcheck, aggregator, humanize_size
 
 
 class SystemCheckTest(unittest.TestCase):
@@ -394,6 +394,11 @@ class SizeCheck(unittest.TestCase):
         """Test the size of a given file"""
         self.assertEqual(total_file_size(self.test_file_path), 19810)
         self.assertEqual(total_file_size(self.multi_files), 87655)
+
+    def test_humanize_size(self):
+        self.assertEqual(humanize_size(1238760), "1.2MiB")
+        self.assertEqual(humanize_size(625987), "611.3KiB")
+        self.assertEqual(humanize_size(347071), "338.9KiB")
 
     def tearDown(self):
         pass
