@@ -22,15 +22,15 @@ import argparse
 import shutil
 
 # Location for finished, collated reports
-FIN_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Complete'
+FIN_REPORTS = ''
 # Location for reports that have been reviewed, but not collated
-REVD_REPORTS = '/Users/grahamleva/src/PDF_collator/functional_tests/Data/Reviewed'
+REVD_REPORTS = ''
 # Location of CoCs
-AUS_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Aus'
-CORP_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/Corp'
-PT_COCS = '/Users/grahamleva/src/PDF_collator/functional_tests/COCs/PT'
+AUS_COCS = ''
+CORP_COCS = ''
+PT_COCS = ''
 # Folder to copy reports into after collation
-BILLINGS = '/Users/grahamleva/src/PDF_collator/functional_tests/Billings'
+BILLINGS = ''
 
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
@@ -556,7 +556,7 @@ def humanize_size(size):
 
     for unit in ['B', 'KiB', 'MiB', 'GiB']:
         if size < 1024.0:
-            return "%3.1f%s" % (size, unit)
+            return "%3.1f %s" % (size, unit)
         size /= 1024.0
 
 def main():
@@ -728,9 +728,10 @@ def main():
     for item in os.listdir(FIN_REPORTS):
         try:
             shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
-        except SameFileError:
-            print("Report {0} already exists in the Billings folder."
-                  " Not copying.".format(item))
+            os.remove(os.path.join(FIN_REPORTS, item))
+        # Report already in Billings
+        except OSError:
+            os.remove(os.path.join(FIN_REPORTS, item))
 
 
 if __name__ == '__main__':
