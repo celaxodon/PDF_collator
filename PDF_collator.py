@@ -35,13 +35,13 @@ BILLINGS = ''
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
 
-__version__ = "0.01"
+__version__ = "0.03"
 __contributors__ = ['Kristine Passalcqua', 'Kimberly Rotge', 'Shawna Biggs',
                     'Michael Leva']
 __license__ = ""
 __maintainer__ = "Graham Leva"
 __email__ = "gleva@analysysinc.com"
-__status__ = "Development"
+__status__ = "Testing"
 
 
 def system_checks():
@@ -728,10 +728,11 @@ def main():
     for item in os.listdir(FIN_REPORTS):
         try:
             shutil.copy2(os.path.join(FIN_REPORTS, item), BILLINGS)
-            os.remove(os.path.join(FIN_REPORTS, item))
         # Report already in Billings
         except OSError:
-            os.remove(os.path.join(FIN_REPORTS, item))
+            print("There was a problem moving the report from {0} "
+                  "to {1}! Please double check the files are in the"
+                  " correct locations.".format(FIN_REPORTS, BILLINGS))
 
 
 if __name__ == '__main__':
