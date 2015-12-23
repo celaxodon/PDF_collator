@@ -232,7 +232,7 @@ def strip_chars(directory):
           list of bad file names if any were found.
     """
     prefix_RE = re.compile('^job_[\\d]*[\\s]{1}')
-    name_RE = re.compile('^[\\d]{6}pg[1-9]{1}\\.pdf$|(QC|WP|SP)([\\d]{3})-([\\d]{3})pg[1-9]{1}\\.pdf$')
+    name_RE = re.compile('^[\\d]{6}pg[0-9]{1}\\.pdf$|(QC|WP|SP)([\\d]{3})-([\\d]{3})pg[0-9]{1}\\.pdf$')
 
     # New operations
     bad_pdf_names = []
