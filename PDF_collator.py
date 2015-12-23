@@ -35,7 +35,7 @@ BILLINGS = ''
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
 
-__version__ = "0.03"
+__version__ = "0.04"
 __contributors__ = ['Kristine Passalcqua', 'Kimberly Rotge', 'Shawna Biggs',
                     'Michael Leva']
 __license__ = ""
