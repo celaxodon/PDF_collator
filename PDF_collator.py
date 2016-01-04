@@ -35,7 +35,7 @@ BILLINGS = ''
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
 
-__version__ = "0.04"
+__version__ = "1.05"
 __contributors__ = ['Kristine Passalcqua', 'Kimberly Rotge', 'Shawna Biggs',
                     'Michael Leva']
 __license__ = ""
@@ -454,6 +454,9 @@ def aggregator(coc_list, coc_tuple, missing_coc_list, pdf_stack, report_dict={})
             for f in matched_pdfs:
                 pdf_stack.remove(f)
 
+            # matched_pdfs are in the wrong order
+            matched_pdfs.sort()
+
             report_dict[report_name] = {'coc': coc,
                                         'pdfs': matched_pdfs,
                                         'missing_pdfs': missing_pdfs}
@@ -550,6 +553,7 @@ def total_file_size(file_list):
     # Return size of file(s) in bytes
     return total_size
 
+
 def humanize_size(size):
     """Takes in an integer representing file size and converts to
     MiB/KiB as needed."""
@@ -558,6 +562,7 @@ def humanize_size(size):
         if size < 1024.0:
             return "%3.1f %s" % (size, unit)
         size /= 1024.0
+
 
 def main():
 
@@ -592,7 +597,7 @@ def main():
     else:
         print("All pass.")
 
-    # Get rid of job_#### prefixes and check namings
+    # Remove job_#### prefixes and check namings
     print()
     print("Analyzing and fixing PDF names...", end=" ")
     good_pdf_names, bad_pdf_names = strip_chars(REVD_REPORTS)
@@ -621,14 +626,13 @@ def main():
     P_set = set(os.listdir(PT_COCS))
     P_set.discard('.DS_Store')
 
-    # coc_list and coc_tuple are being used outside of its local namespace.
-    # Following functions (aggregator) should still have it in their namespaces.
     coc_tuple = (A_set, C_set, P_set)
 
     pdf_stack = good_pdf_names[:]
-    pdf_stack.sort()   # NECESSARY
-    # The list of all pdfs for which no CoC could be found
-    missing_coc_list = []
+    # Sorting is required -- ensures we start searching from the first PDF in
+    # each COC range, if a range exists.
+    pdf_stack.sort()
+    missing_coc_list = [] # The list of all pdfs for which no CoC could be found
     missing_coc_list, report_dict = aggregator(coc_list, coc_tuple,
                                                missing_coc_list, pdf_stack)
 
@@ -643,7 +647,7 @@ def main():
         for num in missing_coc_list:
             print(' * ', num)
         print("---------------------")
-        # Commented out -- flow control is off. 'break' causes errors...
+# Commented out -- flow control is off. 'break' causes errors...
 #        ans = input("Do you want to continue with other reports (y/n)?\n")
 #        while True:
 #            lower_ans = str(ans).lower()
@@ -656,7 +660,6 @@ def main():
 #            else:
 #                print("Yes ('y') or no ('n'), please.")
 #                ans = input("Continue with other reports (y/n)?\n")
-    #pdb.set_trace()
     # Create reports
     report_stats = []
     for report_name in list(report_dict.keys()):
