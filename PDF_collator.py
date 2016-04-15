@@ -35,7 +35,7 @@ BILLINGS = ''
 __author__ = "Graham Leva"
 __copyright__ = "2015, AnalySys, Inc."
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 __contributors__ = ['Kristine Passalcqua', 'Kimberly Rotge', 'Shawna Biggs',
                     'Michael Leva']
 __license__ = ""
@@ -152,7 +152,7 @@ def name_check(*args):
         coc_list.extend(os.listdir(path))
         # Remove OS X-specific directory services store file
         #clean_list = list(filter(lambda x: x != '.DS_Store', coc_list))
-        if '.DS_Store' in coc_list:
+        if '.DS_Store' in coc_list:  # Doing this with a list is inefficient
             coc_list.remove('.DS_Store')
 
     # Need to account for repeat files - 400-400coc.pdf
@@ -610,6 +610,14 @@ def main():
         for name in bad_pdf_names:
             print(" * ", name)
         print("--------------------")
+        print()
+        print("Remember, the syntax for COC names is:\n"
+              "Regular:     123456coc.pdf\n"
+              "Rerun:       123456acoc.pdf\n"
+              "Range:       123456-457coc.pdf\n"
+              "Range-rerun: 123456a-457acoc.pdf\n"
+              "QC/WP/SP:    QC123-456coc.pdf (dashes are necessary!)\n")
+
     else:
         print("All pass.")
 
